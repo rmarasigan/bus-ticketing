@@ -7,24 +7,26 @@
     ],
     "declaration": true,
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noImplicitThis": true,
     "alwaysStrict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": false,
-    "inlineSourceMap": true,
+    "noImplicitAny": true,
     "inlineSources": true,
+    "removeComments": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "strictNullChecks": true,
+    "inlineSourceMap": true,
+    "noImplicitReturns": true,
+    "noUnusedParameters": false,
     "experimentalDecorators": true,
+    "noFallthroughCasesInSwitch": false,
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
     ]
   },
   "exclude": [
-    "node_modules",
-    "cdk.out"
+    "*.md",
+    "cdk.out",
+    "node_modules"
   ]
 }

@@ -19,8 +19,8 @@ import (
 	"github.com/rmarasigan/bus-ticketing/pkg/validate"
 )
 
-// Post is the Users API request POST method that will process the "create" or "login" type request.
-// To process the request, request query "type" is required and the value must be either "create" or "login".
+// Post is the Users API request POST method that will process the "create", "login", or "update" type request.
+// To process the request, request query "type" is required and the value must be either "create", "login" or "update".
 func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// Creates Dynamodb Session
 	service.DynamodbSession()
@@ -42,6 +42,9 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 
 	case "login":
 		return LogIn(tablename, []byte(request.Body), service.DynamoDBClient)
+
+	case "update":
+		return UpdateUserAccount(tablename, []byte(request.Body), service.DynamoDBClient)
 
 	default:
 		return api.StatusUnhandledRequest(errors.New("request not implemented"))
@@ -178,6 +181,72 @@ func LogIn(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*event
 	err = dynamodbattribute.UnmarshalMap(result.Items[0], response)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBError", Message: "Failed to unmarshal user record"})
+		return api.StatusBadRequest(err)
+	}
+
+	return api.StatusOK(response)
+}
+
+// UpdateUserAccount updates and returns the updated account information.
+func UpdateUserAccount(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+	user := new(models.UserResponse)
+
+	err := api.ParseJSON(body, user)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse user json"})
+		return api.StatusBadRequest(err)
+	}
+
+	// Get user information
+	userInfo, err := UserInformation(tablename, user.ID, service.DynamoDBClient)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "UserInformation", Message: "Failed to get user information"})
+		return api.StatusBadRequest(err)
+	}
+
+	// Validate the user information
+	user = user.ValidateUpdateAccount(userInfo)
+	compositePrimaryKey := map[string]*dynamodb.AttributeValue{
+		"id":   {S: aws.String(user.ID)},
+		"type": {S: aws.String(user.UserType)}}
+
+	// Construct the update builder
+	// SET first_name = first_name_value, SET last_name = last_name_value, SET address = address_value
+	// SET email = email_value, SET mobile_number = mobile_number_value
+	update := expression.Set(expression.Name("first_name"), expression.Value(user.FirstName)).
+		Set(expression.Name("last_name"), expression.Value(user.LastName)).
+		Set(expression.Name("address"), expression.Value(user.Address)).
+		Set(expression.Name("email"), expression.Value(user.Email)).
+		Set(expression.Name("mobile_number"), expression.Value(user.MobileNumber))
+
+	// Using the update to create a DynamoDB expression.
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "DynamoDBExpression", Message: "Failed to build an expression"})
+		return api.StatusBadRequest(err)
+	}
+
+	// Use the built expression to populate the DynamoDB Update Item API input parameters.
+	input := &dynamodb.UpdateItemInput{
+		TableName:                 aws.String(tablename),
+		Key:                       compositePrimaryKey,
+		ReturnValues:              aws.String("ALL_NEW"), // Returns all of the attributes of the item (after the UpdateItem operation)
+		UpdateExpression:          expr.Update(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	// Update an item in a table
+	result, err := svc.UpdateItem(input)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "DynamoDBUpdateItem", Message: "Failed to update item"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		return api.StatusBadRequest(err)
+	}
+
+	// Returns a user response in JSON format
+	response, err := service.DynamoDBAttributeResponse(user, result.Attributes)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal user response"})
 		return api.StatusBadRequest(err)
 	}
 

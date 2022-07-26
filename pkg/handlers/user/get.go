@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/rmarasigan/bus-ticketing/pkg/api"
@@ -116,7 +115,7 @@ func UserInformation(tablename string, id string, svc dynamodbiface.DynamoDBAPI)
 	// Returns one or more items and item attributes.
 	result, err := svc.Query(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBScan", Message: "Failed to scan input"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBQuery", Message: "Failed to query input"}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return nil, err
 	}
 
@@ -127,9 +126,9 @@ func UserInformation(tablename string, id string, svc dynamodbiface.DynamoDBAPI)
 	}
 
 	// Unmarshal a map into actual user which front-end can uderstand as a JSON
-	err = dynamodbattribute.UnmarshalMap(result.Items[0], response)
+	err = service.DynamoDBAttributeResponse(response, result.Items[0])
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBError", Message: "Failed to unmarshal user record"})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal user record"})
 		return nil, err
 	}
 

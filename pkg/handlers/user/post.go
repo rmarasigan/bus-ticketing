@@ -58,7 +58,7 @@ func CreateUser(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*
 	err := api.ParseJSON(body, user)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse user json"})
-		return api.StatusBadRequest(errors.New("error parsing user json"))
+		return api.StatusBadRequest(err)
 	}
 
 	// Validate if the required fields are not empty.
@@ -91,15 +91,16 @@ func CreateUser(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*
 		return api.StatusBadRequest(err)
 	}
 
+	// Creating the data that you want to send to DynamoDB
 	input := &dynamodb.PutItemInput{
 		Item:      value,
 		TableName: aws.String(tablename),
 	}
 
+	// Creates a new item or replaces an old item with a new item.
 	_, err = svc.PutItem(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBPutItem", Message: "Failed to add item to the table"},
-			kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBPutItem", Message: "Failed to add item to the table"}, kvp.Attribute{Key: "tablename", Value: tablename})
 
 		return api.StatusBadRequest(err)
 	}
@@ -123,7 +124,7 @@ func LogIn(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*event
 	err := api.ParseJSON(body, user)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse user json"})
-		return api.StatusBadRequest(errors.New("error parsing user json"))
+		return api.StatusBadRequest(err)
 	}
 
 	// Validate if the required fields are not empty.
@@ -178,9 +179,9 @@ func LogIn(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*event
 	}
 
 	// Unmarshal a map into actual user which front-end can uderstand as a JSON
-	err = dynamodbattribute.UnmarshalMap(result.Items[0], response)
+	err = service.DynamoDBAttributeResponse(response, result.Items[0])
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBError", Message: "Failed to unmarshal user record"})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal user record"})
 		return api.StatusBadRequest(err)
 	}
 
@@ -200,12 +201,12 @@ func UpdateUserAccount(tablename string, body []byte, svc dynamodbiface.DynamoDB
 	// Get user information
 	userInfo, err := UserInformation(tablename, user.ID, service.DynamoDBClient)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "UserInformation", Message: "Failed to get user information"})
+		cw.Error(err, &cw.Logs{Code: "UserInformation", Message: "Failed to get user information"}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 
 	// Validate the user information
-	user = user.ValidateUpdateAccount(userInfo)
+	user.ValidateUpdateAccount(userInfo)
 	compositePrimaryKey := map[string]*dynamodb.AttributeValue{
 		"id":   {S: aws.String(user.ID)},
 		"type": {S: aws.String(user.UserType)}}
@@ -244,11 +245,11 @@ func UpdateUserAccount(tablename string, body []byte, svc dynamodbiface.DynamoDB
 	}
 
 	// Returns a user response in JSON format
-	response, err := service.DynamoDBAttributeResponse(user, result.Attributes)
+	err = service.DynamoDBAttributeResponse(user, result.Attributes)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal user response"})
 		return api.StatusBadRequest(err)
 	}
 
-	return api.StatusOK(response)
+	return api.StatusOK(user)
 }

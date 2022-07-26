@@ -41,6 +41,34 @@ export class BusTicketingStack extends cdk.Stack
       removalPolicy: REMOVAL_POLICY
     });
 
+    const BusTable = new dynamodb.Table(this, 'BusTicketing_BusTable', {
+      tableName: 'BusTicketing_BusTable',
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: "company",
+        type: dynamodb.AttributeType.STRING
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: REMOVAL_POLICY
+    });
+
+    const BusUnitTable = new dynamodb.Table(this, 'BusTicketing_BusUnitTable', {
+      tableName: 'BusTicketing_BusUnitTable',
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: "bus",
+        type: dynamodb.AttributeType.STRING
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: REMOVAL_POLICY
+    });
+
     // ---------- Lambda Functions ---------- //
     const users = new lambda.Function(this, 'BusTicketing_Users', {
       functionName: 'BusTicketing_Users',
@@ -57,6 +85,64 @@ export class BusTicketingStack extends cdk.Stack
     });
     UsersTable.grantReadWriteData(users);
     users.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const bus = new lambda.Function(this, 'BusTicketing_Bus', {
+      functionName: 'BusTicketing_Bus',
+      description: 'An API Lambda Integration that will process API requests coming from Bus API',
+      handler: 'bus',
+      memorySize: 1024,
+      role: BusTicketing_CustomRole,
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus'),
+      environment: {
+        "BUS_TABLE": BusTable.tableName
+      }
+    });
+    BusTable.grantReadWriteData(bus);
+    bus.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const busUnit = new lambda.Function(this, 'BusTicketing_BusUnit', {
+      functionName: 'BusTicketing_BusUnit',
+      description: 'An API Lambda Integration that will process API requests coming from Bus Unit API',
+      handler: 'busUnit',
+      memorySize: 1024,
+      role: BusTicketing_CustomRole,
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/busUnit'),
+      environment: {
+        "BUS_TABLE": BusTable.tableName,
+        "BUS_UNIT_TABLE": BusUnitTable.tableName
+      }
+    });
+    BusTable.grantReadWriteData(busUnit);
+    BusUnitTable.grantReadWriteData(busUnit);
+    busUnit.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const busRoute = new lambda.Function(this, 'BusTicketing_BusRoute', {
+      functionName: 'BusTicketing_BusRoute',
+      description: 'An API Lambda Integration that will process API requests coming from Bus Route API',
+      handler: 'busRoute',
+      memorySize: 1024,
+      role: BusTicketing_CustomRole,
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/busRoute')
+    });
+    busRoute.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const busTrip = new lambda.Function(this, 'BusTicketing_BusTrip', {
+      functionName: 'BusTicketing_BusTrip',
+      description: 'An API Lambda Integration that will process API requests coming from Bus Trip API',
+      handler: 'busTrip',
+      memorySize: 1024,
+      role: BusTicketing_CustomRole,
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/busTrip')
+    });
+    busTrip.applyRemovalPolicy(REMOVAL_POLICY);
 
     // ---------- API Gateway ---------- //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
@@ -76,10 +162,36 @@ export class BusTicketingStack extends cdk.Stack
         'method.request.querystring.id': true
       }
     });
+
     usersApi.addMethod('POST', usersApiIntegration, {
       requestParameters: {
         'method.request.querystring.type': true
       }
     });
+
+    const busApiIntegration = new apigw.LambdaIntegration(bus);
+    const busUnitApiIntegration = new apigw.LambdaIntegration(busUnit);
+    const busTripApiIntegration = new apigw.LambdaIntegration(busTrip);
+    const busRouteApiIntegration = new apigw.LambdaIntegration(busRoute);
+
+    const busApi = api.root.addResource('bus');
+    busApi.addMethod('GET', busApiIntegration);
+    busApi.addMethod('POST', busApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.type': true
+      }
+    });
+
+    const busUnitApi = busApi.addResource('unit');
+    busUnitApi.addMethod('GET', busUnitApiIntegration);
+    busUnitApi.addMethod('POST', busUnitApiIntegration);
+
+    const busRouteApi = busApi.addResource('route');
+    busRouteApi.addMethod('GET', busRouteApiIntegration);
+    busRouteApi.addMethod('POST', busRouteApiIntegration);
+
+    const busTripApi = busApi.addResource('trip');
+    busTripApi.addMethod('GET', busTripApiIntegration);
+    busTripApi.addMethod('POST', busTripApiIntegration);
   }
 }

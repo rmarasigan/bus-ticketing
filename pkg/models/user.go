@@ -64,7 +64,7 @@ func (user *User) SetValues() {
 
 // ValidateUpdateAccount validates if the field that are going to be updated are empty or not
 // to set its previous value.
-func (user *UserResponse) ValidateUpdateAccount(old *UserResponse) *UserResponse {
+func (user *UserResponse) ValidateUpdateAccount(old *UserResponse) {
 	if user.FirstName == "" {
 		user.FirstName = old.FirstName
 	}
@@ -92,6 +92,4 @@ func (user *UserResponse) ValidateUpdateAccount(old *UserResponse) *UserResponse
 	if strings.HasPrefix(user.ID, "CSTMR") {
 		user.UserType = "CUSTOMER"
 	}
-
-	return user
 }

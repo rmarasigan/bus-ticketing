@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/rmarasigan/bus-ticketing/pkg/api"
+	busunit "github.com/rmarasigan/bus-ticketing/pkg/handlers/bus_unit"
 )
 
 func main() {
@@ -13,5 +14,16 @@ func main() {
 }
 
 func handler(ctx context.Context, events *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	return api.StatusOK("")
+	method := events.HTTPMethod
+
+	switch method {
+	case "GET":
+		return busunit.Get(ctx, events)
+
+	case "POST":
+		return busunit.Post(ctx, events)
+
+	default:
+		return api.StatusUnhandledMethod()
+	}
 }

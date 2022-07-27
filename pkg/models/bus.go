@@ -73,7 +73,7 @@ func (bus *Bus) ValidateUpdate(old *Bus) {
 	}
 }
 
-// A BusUnit represents the active bus unit of a bus company and the
+// BusUnit represents the active bus unit of a bus company and the
 // capacity for the specific unit.
 type BusUnit struct {
 	ID          string `json:"id"`           // Unique bus unit ID as the primary key
@@ -103,12 +103,8 @@ func (unit *BusUnit) SetValues() {
 // to set its previous value.
 //
 // Fields that are validated:
-//     * code, active, capacity
+//     * active, capacity
 func (unit *BusUnit) ValidateUpdate(old *BusUnit) {
-	if unit.Code == "" {
-		unit.Code = old.Code
-	}
-
 	if unit.Active == nil {
 		unit.Active = old.Active
 	}

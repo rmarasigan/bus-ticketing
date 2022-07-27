@@ -10,7 +10,7 @@ import (
 // from the string passed and returns a string without the vowel letters.
 //
 // Example:
-//  input, err := RemoveVowel("a(bc\de.f)g*hi")
+//  input, err := RemoveVowel(`a(bc\de.f)g*hi`)
 //  if err != nil {
 // 	log.Print(err)
 //  }

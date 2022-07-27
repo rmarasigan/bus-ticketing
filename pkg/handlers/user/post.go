@@ -79,7 +79,10 @@ func CreateUser(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*
 
 	// Returns error message of "username exist".
 	if usernameExist {
-		return api.StatusBadRequest(errors.New("username exist"))
+		err := errors.New("username exist")
+
+		cw.Error(err, &cw.Logs{Code: "ValidateUsername", Message: "The username parameter passed already exist."})
+		return api.StatusBadRequest(err)
 	}
 
 	user.SetValues()

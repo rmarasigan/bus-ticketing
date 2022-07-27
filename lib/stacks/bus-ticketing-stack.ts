@@ -184,7 +184,12 @@ export class BusTicketingStack extends cdk.Stack
 
     const busUnitApi = busApi.addResource('unit');
     busUnitApi.addMethod('GET', busUnitApiIntegration);
-    busUnitApi.addMethod('POST', busUnitApiIntegration);
+    busUnitApi.addMethod('POST', busUnitApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.bus': true,
+        'method.request.querystring.type': true
+      }
+    });
 
     const busRouteApi = busApi.addResource('route');
     busRouteApi.addMethod('GET', busRouteApiIntegration);

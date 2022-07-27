@@ -86,8 +86,7 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	// Creates a new item or replaces an old item with a new item.
 	_, err = svc.PutItem(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBPutItem", Message: "Failed to add item to the table"},
-			kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBPutItem", Message: "Failed to add item to the table"}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 

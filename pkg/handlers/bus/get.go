@@ -62,7 +62,7 @@ func BusInformation(tablename string, id string, svc dynamodbiface.DynamoDBAPI) 
 	// Returns one or more items and item attributes.
 	result, err := svc.Query(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynadmoQuery", Message: "Failed to query input"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBQuery", Message: "Failed to query input"}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return nil, err
 	}
 
@@ -112,6 +112,12 @@ func FilterBus(tablename string, company string, svc dynamodbiface.DynamoDBAPI) 
 		return api.StatusBadRequest(err)
 	}
 
+	// Checks if there are items returned.
+	if len(result.Items) == 0 {
+		cw.Info(&cw.Logs{Code: "DynamoDBAPI", Message: "No data found"})
+		return nil, errors.New("bus information not found")
+	}
+
 	// Returns a bus response in JSON formation
 	err = service.DynamoDBAttributesResponse(bus, result.Items)
 	if err != nil {
@@ -127,14 +133,20 @@ func ListBus(tablename string, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewa
 	bus := new([]models.Bus)
 	input := &dynamodb.ScanInput{TableName: aws.String(tablename)}
 
-	// Returns one or more items and item attributes.
+	// Returns one or more items.
 	result, err := svc.Scan(input)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBScan", Message: "Failed to scan input"}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 
-	// Returns a bus response in JSON formation.
+	// Checks if there are items returned.
+	if len(result.Items) == 0 {
+		cw.Info(&cw.Logs{Code: "DynamoDBAPI", Message: "No data found"})
+		return nil, errors.New("no bus information")
+	}
+
+	// Unmarshal a map into actual bus struct.
 	err = service.DynamoDBAttributesResponse(bus, result.Items)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributesResponse", Message: "Failed to unmarshal bus response"})

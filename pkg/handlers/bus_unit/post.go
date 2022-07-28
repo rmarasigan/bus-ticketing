@@ -3,19 +3,17 @@ package busunit
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/rmarasigan/bus-ticketing/pkg/api"
 	"github.com/rmarasigan/bus-ticketing/pkg/cw/kvp"
 	cw "github.com/rmarasigan/bus-ticketing/pkg/cw/logger"
+	"github.com/rmarasigan/bus-ticketing/pkg/handlers/bus"
 	"github.com/rmarasigan/bus-ticketing/pkg/models"
 	"github.com/rmarasigan/bus-ticketing/pkg/service"
 	"github.com/rmarasigan/bus-ticketing/pkg/validate"
@@ -38,6 +36,7 @@ var (
 //  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?type={value}&bus={value}
 func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	service.DynamodbSession()
+	svc = service.DynamoDBClient
 
 	BUS_TABLE = os.Getenv("BUS_TABLE")
 	tablename := os.Getenv("BUS_UNIT_TABLE")
@@ -49,20 +48,28 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 		return api.StatusUnhandledRequest(errors.New("dynamodb table on env is not implemented"))
 	}
 
-	if queryBus == "" {
-		return api.StatusBadRequest(errors.New("method.request.querystring.bus is not set"))
-	}
-
 	if queryType == "" {
 		return api.StatusBadRequest(errors.New("method.request.querystring.type is not set"))
 	}
 
 	switch queryType {
 	case "create":
-		return CreateBusUnit(tablename, queryBus, []byte(request.Body), service.DynamoDBClient)
+		if queryBus == "" {
+			return api.StatusBadRequest(errors.New("method.request.querystring.bus is not set"))
+		}
+
+		_, err := bus.BusInformation(BUS_TABLE, queryBus)
+		if err != nil {
+			err = errors.New("bus id not found")
+
+			cw.Error(err, &cw.Logs{Code: "BusUnitPostAPI", Message: "Bus ID is not found."})
+			return api.StatusBadRequest(err)
+		}
+
+		return CreateBusUnit(tablename, queryBus, []byte(request.Body))
 
 	case "update":
-		return UpdateBusUnit(tablename, queryBus, []byte(request.Body), service.DynamoDBClient)
+		return UpdateBusUnit(tablename, []byte(request.Body))
 
 	default:
 		return api.StatusUnhandledRequest(errors.New("request not implemented"))
@@ -72,6 +79,9 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 // CreateBusUnit creates a new item to the DynamoDB table. Bus ID is a required field to
 // connect the Bus Unit information to the parent Bus. After saving the Bus Unit information
 // it will return an API Gateway response.
+//
+// Endpoint:
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit?type=create&bus={value}
 //
 // Payload Parameters:
 //  active: whether the bus is on trip
@@ -84,14 +94,14 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 // 	"active": true,
 // 	"code": "XYZ123",
 //  }
-func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func CreateBusUnit(tablename string, busID string, body []byte) (*events.APIGatewayProxyResponse, error) {
 	unit := new(models.BusUnit)
 
 	// Checks if the request payload body is set.
-	if len(body) == 0 || body == nil {
+	if len(body) == 0 {
 		err := errors.New("payload is not set")
 
-		cw.Error(err, &cw.Logs{Code: "CreateBusUnit", Message: "Request cannot be processed as payload is not set"})
+		cw.Error(err, &cw.Logs{Code: "CreateBusUnit", Message: "Request cannot be processed as payload is not set."})
 		return api.StatusBadRequest(err)
 	}
 
@@ -114,16 +124,16 @@ func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 	unit.SetValues()
 
 	// Checks whether the bus unit code exist or not.
-	busUnitExist, err := ValidateBusUnitCode(tablename, unit.Code, service.DynamoDBClient)
+	busUnitExist, err := ValidateBusUnitCode(tablename, unit.Code)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "BusUnitCodeExist", Message: "Failed to validate bus unit code."})
+		cw.Error(err, &cw.Logs{Code: "ValidateBusUnitCode", Message: "Failed to validate bus unit code."})
 		return api.StatusBadRequest(err)
 	}
 
 	if busUnitExist {
 		err := errors.New("bus unit code already exist")
 
-		cw.Error(err, &cw.Logs{Code: "BusUnitCodeExist", Message: "The bus unit code parameter passed already exist."})
+		cw.Error(err, &cw.Logs{Code: "ValidateBusUnitCode", Message: "The bus unit code parameter passed already exist."})
 		return api.StatusBadRequest(err)
 	}
 
@@ -152,9 +162,12 @@ func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 // UpdateBusUnit updates and validates the field before saving the item to the DynamoDB table.
 // After updating the bus unit information, it returns an API Gateway response.
 //
+// Endpoint:
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit?type=update
+//
 // Payload Parameter accepts:
 //  active: whether the bus is on trip
-//  id: unique bus unit ID as the primary key
+//  id: unique bus unit ID as the primary key and is required field
 //  capacity: the number of passengers of a bus unit
 //
 // Payload Request:
@@ -163,7 +176,7 @@ func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 // 	"active": true,
 // 	"code": "XYZ123",
 //  }
-func UpdateBusUnit(tablename string, busID string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func UpdateBusUnit(tablename string, body []byte) (*events.APIGatewayProxyResponse, error) {
 	unit := new(models.BusUnit)
 
 	// Checks if the request payload body is set.
@@ -181,7 +194,7 @@ func UpdateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 	}
 
 	// Get the bus unit information
-	unitInfo, err := BusUnitInformation(tablename, unit.ID, svc)
+	unitInfo, err := BusUnitInformation(tablename, unit.ID)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "BusUnitInformation", Message: "Failed to get bus unit information."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
@@ -189,13 +202,23 @@ func UpdateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 
 	// Validate bus unit update information before updating
 	unit.ValidateUpdate(unitInfo)
+	if unit.Bus != "" && unit.Bus != unitInfo.Bus {
+		err := errors.New("cannot update bus id")
+
+		cw.Error(err, &cw.Logs{Code: "ValidateBusUnitUpdate", Message: "Cannot update bus id, composite primary key."})
+		return api.StatusBadRequest(err)
+	}
+
+	if unit.Code != "" && unit.Code != unitInfo.Code {
+		err := errors.New("cannot update bus unit code")
+
+		cw.Error(err, &cw.Logs{Code: "ValidateBusUnitUpdate", Message: "Cannot update bus unit code"})
+		return api.StatusBadRequest(err)
+	}
+
 	compositePrimaryKey := map[string]*dynamodb.AttributeValue{
 		"id":  {S: aws.String(unit.ID)},
-		"bus": {S: aws.String(busID)}}
-
-	// Set the bus unit ID new value
-	key := strings.Split(unitInfo.Bus, "-")[0]
-	unit.ID = fmt.Sprintf("%s-%s", key, strings.ToUpper(unit.Code))
+		"bus": {S: aws.String(unit.Bus)}}
 
 	// Construct the update builder
 	// SET active = active_value, SET capacity = capacity_value

@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/rmarasigan/bus-ticketing/pkg/api"
 	"github.com/rmarasigan/bus-ticketing/pkg/cw/kvp"
@@ -29,6 +28,7 @@ import (
 func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// Intialize DynamoDB Session
 	service.DynamodbSession()
+	svc = service.DynamoDBClient
 
 	tablename := os.Getenv("BUS_TABLE")
 	queryType := request.QueryStringParameters["type"]
@@ -43,10 +43,10 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 
 	switch queryType {
 	case "create":
-		return CreateBus(tablename, []byte(request.Body), service.DynamoDBClient)
+		return CreateBus(tablename, []byte(request.Body))
 
 	case "update":
-		return UpdateBus(tablename, []byte(request.Body), service.DynamoDBClient)
+		return UpdateBus(tablename, []byte(request.Body))
 
 	default:
 		return api.StatusUnhandledRequest(errors.New("request not implemented"))
@@ -75,8 +75,16 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 //    "email": "thando.emmet@outlook.com",
 //    "mobile_number": "+1-335-908-1432"
 //  }
-func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func CreateBus(tablename string, body []byte) (*events.APIGatewayProxyResponse, error) {
 	bus := new(models.Bus)
+
+	// Checks if the request payload body is set.
+	if len(body) == 0 {
+		err := errors.New("payload is not set")
+
+		cw.Error(err, &cw.Logs{Code: "CreateBus", Message: "Request cannot be processed as payload is not set."})
+		return api.StatusBadRequest(err)
+	}
 
 	err := api.ParseJSON(body, bus)
 	if err != nil {
@@ -94,6 +102,21 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	}
 
 	bus.SetValues()
+
+	// Checks if the bus company already exist.
+	companyExist, err := ValidateBusCompany(tablename, bus.Company, bus.Address)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "ValidateBusCompany", Message: "Failed to validate bus company name."})
+		return api.StatusBadRequest(err)
+	}
+
+	// Returns error message of "company name already exist".
+	if companyExist {
+		err := errors.New("company already exist")
+
+		cw.Error(err, &cw.Logs{Code: "ValidateBusCompany", Message: "The company parameters passed already exist."})
+		return api.StatusBadRequest(err)
+	}
 
 	// Converting the record to dynamodb.AttributeValue type.
 	value, err := dynamodbattribute.MarshalMap(bus)
@@ -127,7 +150,6 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 //
 // Payload Parameter accepts:
 //  id: bus ID as the primary key and is a required field
-//  company: name of the company that will serve as your sort key and is a required field
 //  owner: bus company owner
 //  address: bus company complete address
 //  email: bus company email
@@ -137,12 +159,11 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 //  {
 //    "id": "RLBSW-589710"
 //    "owner": "Thando Oyibo Emmett",
-//    "company": "Rail Bus Way",
 //    "address": "1986 Bogisich Junctions, Hamillhaven, Kansas",
 //    "email": "thando.emmet@outlook.com",
 //    "mobile_number": "+1-335-908-1432"
 //  }
-func UpdateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func UpdateBus(tablename string, body []byte) (*events.APIGatewayProxyResponse, error) {
 	bus := new(models.Bus)
 
 	err := api.ParseJSON(body, bus)
@@ -151,8 +172,17 @@ func UpdateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 		return api.StatusBadRequest(err)
 	}
 
+	// Check if the bus ID is implemented or not.
+	// Cannot update item without the primary key.
+	if bus.ID == "" {
+		err := errors.New("bus id is not set")
+
+		cw.Error(err, &cw.Logs{Code: "UpdateBusInformation", Message: "Bus ID is not implemented."})
+		return api.StatusUnhandledRequest(err)
+	}
+
 	// Get bus information using the ID
-	busInfo, err := BusInformation(tablename, bus.ID, svc)
+	busInfo, err := BusInformation(tablename, bus.ID)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "BusInformation", Message: "Failed to get bus information."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
@@ -160,6 +190,13 @@ func UpdateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 
 	// Validate bus information
 	bus.ValidateUpdate(busInfo)
+	if bus.Company != "" && bus.Company != busInfo.Company {
+		err := errors.New("cannot update company name")
+
+		cw.Error(err, &cw.Logs{Code: "ValidateBusUpdate", Message: "Cannot update company name, composite primary key."})
+		return api.StatusBadRequest(err)
+	}
+
 	compositePrimaryKey := map[string]*dynamodb.AttributeValue{
 		"id":      {S: aws.String(bus.ID)},
 		"company": {S: aws.String(bus.Company)}}

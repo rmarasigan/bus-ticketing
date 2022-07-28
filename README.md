@@ -87,11 +87,44 @@ If npx is not installed you can install that by using `npm install` command.
 dev@dev:~$ npm install -g npx
 ```
 
+## Godoc
+Godoc extracts and generates documentation for Go programs. It runs a web server and presents the documentation as a web page.
+
+Install `godoc` with the following command:
+```bash
+dev@dev:~$ go get golang.org/x/tools/cmd/godoc
+go get: installing executables with 'go get' in module mode is deprecated.
+	Use 'go install pkg@version' instead.
+	For more information, see https://golang.org/doc/go-get-install-deprecation
+	or run 'go help get' or 'go help install'.
+```
+
+If it throws an issue of `module mode is deprecated`. Try this command to install the latest godoc:
+```bash
+dev@dev:~$ go install golang.org/x/tools/cmd/godoc@latest
+```
+
+Check whether the godoc is successfully installed:
+```bash
+dev@dev:~$ which godoc
+/home/dev/go/bin/godoc
+```
+
+To start a `godoc` server:
+```bash
+dev@dev:~/go/src/github.com/username/repo-name$ godoc -http:=6060
+using module mode; GOMOD=/home/dev/go/src/github.com/username/repo-name/go.mod
+```
+
+In your browser, visit: [godoc-server](http://localhost:6060)
+
 ## Reference
 * [Stacks](https://docs.aws.amazon.com/cdk/v2/guide/stacks.html)
+* [Godoc Command](https://stackoverflow.com/a/61300854)
 * [Flag Features](https://github.com/aws/aws-cdk/blob/v1-main/packages/@aws-cdk/cx-api/lib/features.ts)
 * [0055 Feature Flags](https://github.com/aws/aws-cdk-rfcs/blob/master/text/0055-feature-flags.md)
 * [`npm` CLI Commands](https://docs.npmjs.com/cli/v6/commands)
+* [Godoc Documentation](https://pkg.go.dev/golang.org/x/tools/cmd/godoc)
 * [How to use Context in AWS CDK](https://bobbyhadz.com/blog/how-to-use-context-aws-cdk)
 * [What does CDK.JSON do in AWS CDK](https://bobbyhadz.com/blog/cdk-json-aws-cdk)
 * [npm vs npx — What’s the Difference?](https://www.freecodecamp.org/news/npm-vs-npx-whats-the-difference/)

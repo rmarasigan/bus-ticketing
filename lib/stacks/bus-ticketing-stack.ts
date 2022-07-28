@@ -69,6 +69,20 @@ export class BusTicketingStack extends cdk.Stack
       removalPolicy: REMOVAL_POLICY
     });
 
+    const BusRouteTable = new dynamodb.Table(this, 'BusTicketing_BusRouteTable', {
+      tableName: 'BusTicketing_BusRouteTable',
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: "bus",
+        type: dynamodb.AttributeType.STRING
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: REMOVAL_POLICY
+    });
+
     // ---------- Lambda Functions ---------- //
     const users = new lambda.Function(this, 'BusTicketing_Users', {
       functionName: 'BusTicketing_Users',
@@ -116,7 +130,7 @@ export class BusTicketingStack extends cdk.Stack
         "BUS_UNIT_TABLE": BusUnitTable.tableName
       }
     });
-    BusTable.grantReadWriteData(busUnit);
+    BusTable.grantReadData(busUnit);
     BusUnitTable.grantReadWriteData(busUnit);
     busUnit.applyRemovalPolicy(REMOVAL_POLICY);
 
@@ -128,8 +142,16 @@ export class BusTicketingStack extends cdk.Stack
       role: BusTicketing_CustomRole,
       runtime: lambda.Runtime.GO_1_X,
       timeout: cdk.Duration.seconds(60),
-      code: lambda.Code.fromAsset('cmd/busRoute')
+      code: lambda.Code.fromAsset('cmd/busRoute'),
+      environment: {
+        "BUS_TABLE": BusTable.tableName,
+        "BUS_UNIT_TABLE": BusUnitTable.tableName,
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName
+      }
     });
+    BusTable.grantReadData(busRoute);
+    BusUnitTable.grantReadData(busRoute);
+    BusRouteTable.grantReadWriteData(busRoute);
     busRoute.applyRemovalPolicy(REMOVAL_POLICY);
 
     const busTrip = new lambda.Function(this, 'BusTicketing_BusTrip', {
@@ -193,7 +215,12 @@ export class BusTicketingStack extends cdk.Stack
 
     const busRouteApi = busApi.addResource('route');
     busRouteApi.addMethod('GET', busRouteApiIntegration);
-    busRouteApi.addMethod('POST', busRouteApiIntegration);
+    busRouteApi.addMethod('POST', busRouteApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.type': true,
+        'method.request.querystring.unit': true
+      }
+    });
 
     const busTripApi = busApi.addResource('trip');
     busTripApi.addMethod('GET', busTripApiIntegration);

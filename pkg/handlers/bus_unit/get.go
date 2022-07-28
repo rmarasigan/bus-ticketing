@@ -18,13 +18,18 @@ import (
 	"github.com/rmarasigan/bus-ticketing/pkg/service"
 )
 
+var (
+	svc dynamodbiface.DynamoDBAPI
+)
+
 // Get is the Bus Unit API request GET method that will process the request.
 //
 // Query Parameters:
 // 	capacity: the number of passenger of a bus unit.
 // 	active: whether the bus is on trip. accepts true or false value.
 //
-// Get all bus unit: https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/
+// Get all bus unit
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/
 //
 // Sample response:
 //  [
@@ -46,7 +51,8 @@ import (
 //     }
 //  ]
 //
-// Get active bus unit: https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?active={value}
+// Get active bus unit
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?active={value}
 //
 // Sample response:
 //  [
@@ -60,7 +66,8 @@ import (
 //     }
 //  ]
 //
-// Get list of bus unit with specific capacity: https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?capacity={value}
+// Get list of bus unit with specific capacity
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?capacity={value}
 //
 // Sample response:
 //  [
@@ -76,6 +83,7 @@ import (
 func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// Creates DynamoDB Session
 	service.DynamodbSession()
+	svc = service.DynamoDBClient
 
 	tablename := os.Getenv("BUS_UNIT_TABLE")
 
@@ -89,7 +97,7 @@ func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.A
 			return api.StatusBadRequest(err)
 		}
 
-		return FilterActiveBusUnit(tablename, active, service.DynamoDBClient)
+		return FilterActiveBusUnit(tablename, active)
 	}
 
 	if queryCapacity != "" {
@@ -99,15 +107,16 @@ func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.A
 			return api.StatusBadRequest(err)
 		}
 
-		return FilterCapacityBusUnit(tablename, capacity, service.DynamoDBClient)
+		return FilterCapacityBusUnit(tablename, capacity)
 	}
 
-	return ListBusUnit(tablename, service.DynamoDBClient)
+	return ListBusUnit(tablename)
 }
 
 // BusUnitInformation fetches the information about the bus unit.
-func BusUnitInformation(tablename string, id string, svc dynamodbiface.DynamoDBAPI) (*models.BusUnit, error) {
+func BusUnitInformation(tablename string, id string) (*models.BusUnit, error) {
 	busUnit := new(models.BusUnit)
+	svc = service.DynamoDBClient
 
 	// Construct the key condition builder with value.
 	// WHERE id = id_value
@@ -128,7 +137,7 @@ func BusUnitInformation(tablename string, id string, svc dynamodbiface.DynamoDBA
 		KeyConditionExpression:    expr.KeyCondition(),
 	}
 
-	// Returns one or more items and item attributes.
+	// Returns one or more items.
 	result, err := svc.Query(input)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBQuery", Message: "Failed to query input."}, kvp.Attribute{Key: "tablename", Value: tablename})
@@ -151,7 +160,7 @@ func BusUnitInformation(tablename string, id string, svc dynamodbiface.DynamoDBA
 }
 
 // ValidateBusUnitCode returns a boolean and error value to check whether the bus unit code already exists or not.
-func ValidateBusUnitCode(tablename string, code string, svc dynamodbiface.DynamoDBAPI) (bool, error) {
+func ValidateBusUnitCode(tablename string, code string) (bool, error) {
 	// Construct the filter builder with a name and value.
 	// WHERE code = code_value
 	filter := expression.Name("code").Equal(expression.Value(code))
@@ -182,7 +191,7 @@ func ValidateBusUnitCode(tablename string, code string, svc dynamodbiface.Dynamo
 }
 
 // FilterActiveBusUnit returns an API Gateway response of filtered list of bus unit which is active or not.
-func FilterActiveBusUnit(tablename string, active bool, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func FilterActiveBusUnit(tablename string, active bool) (*events.APIGatewayProxyResponse, error) {
 	busUnit := new([]models.BusUnit)
 
 	// Construct the filter builder with a name and value.
@@ -229,7 +238,7 @@ func FilterActiveBusUnit(tablename string, active bool, svc dynamodbiface.Dynamo
 
 // FilterCapacityBusUnit returns an API Gateway response of filtered list of bus unit which has the specific
 // number of passenger (capacity).
-func FilterCapacityBusUnit(tablename string, capacity int, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func FilterCapacityBusUnit(tablename string, capacity int) (*events.APIGatewayProxyResponse, error) {
 	busUnit := new([]models.BusUnit)
 
 	// Construct the filter builder with a name and value.
@@ -275,14 +284,14 @@ func FilterCapacityBusUnit(tablename string, capacity int, svc dynamodbiface.Dyn
 }
 
 // ListBusUnit returns an API Gateway response of all the items list of bus unit.
-func ListBusUnit(tablename string, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+func ListBusUnit(tablename string) (*events.APIGatewayProxyResponse, error) {
 	busUnits := new([]models.BusUnit)
 	input := &dynamodb.ScanInput{TableName: aws.String(tablename)}
 
 	// Returns one or more items.
 	result, err := svc.Scan(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBScan", Message: "Failed to scan input"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBScan", Message: "Failed to scan input."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 

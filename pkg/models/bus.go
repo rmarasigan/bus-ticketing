@@ -23,10 +23,6 @@ type Bus struct {
 // Key uses company name, removes the vowel letters and converts
 // it to uppercase to generate a key value of bus that will be used
 // for the bus ID.
-//
-// Example:
-//		company: abcdefghi
-//		key: BCDFGH
 func (bus Bus) Key() string {
 	key, err := common.RemoveVowel(bus.Company)
 	if err != nil {
@@ -41,10 +37,6 @@ func (bus Bus) Key() string {
 
 // SetValues automatically generates the Bus ID as your primary key,
 // and set the date it was created as unix epoch time.
-//
-// Example:
-//		id: BCDFGH-587390
-//		date_created: 1658739080
 func (bus *Bus) SetValues() {
 	bus.DateCreated = fmt.Sprint(time.Now().Unix())
 	bus.ID = fmt.Sprintf("%s-%s", bus.Key(), bus.DateCreated[2:8])
@@ -54,7 +46,7 @@ func (bus *Bus) SetValues() {
 // are empty or not to set its previous value.
 //
 // Fields that are validated:
-//     * owner, address, email, mobile_number
+//  owner, address, email, mobile_number
 func (bus *Bus) ValidateUpdate(old *Bus) {
 	if bus.Owner == "" {
 		bus.Owner = old.Owner
@@ -103,7 +95,7 @@ func (unit *BusUnit) SetValues() {
 // to set its previous value.
 //
 // Fields that are validated:
-//     * active, capacity
+//  active, capacity
 func (unit *BusUnit) ValidateUpdate(old *BusUnit) {
 	if unit.Active == nil {
 		unit.Active = old.Active
@@ -114,17 +106,49 @@ func (unit *BusUnit) ValidateUpdate(old *BusUnit) {
 	}
 }
 
+// BusRoute is used to store the specific bus unit route, rate, and schedule.
 type BusRoute struct {
-	ID            string  `json:"id"`
-	BusUnit       BusUnit `json:"bus_unit,omitempty"`
-	Name          string  `json:"route_name"`
-	Rate          float64 `json:"route_rate"`
-	Available     bool    `json:"route_available"`
-	DepartureTime string  `json:"route_departure_time"`
-	ArrivalTime   string  `json:"route_arrival_time"`
-	FromRoute     string  `json:"route_from"`
-	ToRouteCode   string  `json:"route_to"`
-	DateCreated   string  `json:"route_date_created"`
+	ID            string  `json:"id"`             // Unique bus route ID as the primary key
+	Bus           string  `json:"bus"`            // The Bus ID as the sort key
+	BusUnit       string  `json:"bus_unit"`       // The Bus Unit ID for the identification of specific bus unit route
+	Rate          float64 `json:"rate"`           // Fare charged to the passenger
+	Available     *bool   `json:"available"`      // Defines if the bus is available for that route
+	DepartureTime string  `json:"departure_time"` // Expected departure time on the starting point
+	ArrivalTime   string  `json:"arrival_time"`   // Expected arrival time on the destination
+	FromRoute     string  `json:"route_from"`     // Indicating the starting point of a bus
+	ToRoute       string  `json:"route_to"`       // Indicating the destination of bus
+	DateCreated   string  `json:"date_created"`   // The date it was created as unix epoch time
+}
+
+// ValidateUpdate validates bus route field if they are empty or not
+// to set its previous value.
+//
+// Fields that are validated:
+//  rate, available, departure_time, arrival_time, from_route, to_route
+func (route *BusRoute) ValidateUpdate(old *BusRoute) {
+	if route.Rate <= 0 {
+		route.Rate = old.Rate
+	}
+
+	if route.Available == nil {
+		route.Available = old.Available
+	}
+
+	if route.DepartureTime == "" {
+		route.DepartureTime = old.DepartureTime
+	}
+
+	if route.ArrivalTime == "" {
+		route.ArrivalTime = old.ArrivalTime
+	}
+
+	if route.FromRoute == "" {
+		route.FromRoute = old.FromRoute
+	}
+
+	if route.ToRoute == "" {
+		route.ToRoute = old.ToRoute
+	}
 }
 
 type BusTrip struct {

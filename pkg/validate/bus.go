@@ -68,3 +68,43 @@ func CreateBusUnit(unit *models.BusUnit) string {
 
 	return err_msg
 }
+
+// CreateBusRoute checks if the required request parameters are empty or not.
+// If some of the fields are emtpy, it will return an error message.
+//
+// Required request parameter: rate, departure_time, arrival_time, from_route
+// to_route, available
+func CreateBusRoute(route *models.BusRoute) string {
+	var msg []string
+	var err_msg string
+
+	if route.Rate <= 0 {
+		msg = append(msg, "Rate")
+	}
+
+	if route.Available == nil {
+		msg = append(msg, "Available")
+	}
+
+	if route.DepartureTime == "" {
+		msg = append(msg, "DepartureTime")
+	}
+
+	if route.ArrivalTime == "" {
+		msg = append(msg, "ArrivalTime")
+	}
+
+	if route.FromRoute == "" {
+		msg = append(msg, "FromRoute")
+	}
+
+	if route.ToRoute == "" {
+		msg = append(msg, "ToRoute")
+	}
+
+	if len(msg) > 0 {
+		err_msg = fmt.Sprintf("Missing %s field(s)", strings.Join(msg, ", "))
+	}
+
+	return err_msg
+}

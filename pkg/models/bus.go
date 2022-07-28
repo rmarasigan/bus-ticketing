@@ -26,11 +26,17 @@ type Bus struct {
 func (bus Bus) Key() string {
 	key, err := common.RemoveVowel(bus.Company)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "SetValues", Message: "Failed to remove vowel letters"})
+		cw.Error(err, &cw.Logs{Code: "BusKey", Message: "Failed to remove vowel letters."})
 		return ""
 	}
 
-	key = strings.Replace(strings.ToUpper(key), " ", "", -1)
+	key, err = common.RemoveSymbols(key)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "BusKey", Message: "Failed to remove symbols."})
+		return ""
+	}
+
+	key = strings.ToUpper(key)
 
 	return key
 }
@@ -48,6 +54,10 @@ func (bus *Bus) SetValues() {
 // Fields that are validated:
 //  owner, address, email, mobile_number
 func (bus *Bus) ValidateUpdate(old *Bus) {
+	if bus.Company == "" {
+		bus.Company = old.Company
+	}
+
 	if bus.Owner == "" {
 		bus.Owner = old.Owner
 	}
@@ -85,10 +95,8 @@ type BusUnit struct {
 //		id: BCDFGH-XYZ-BUS-0001
 //		date_created: 1658837116
 func (unit *BusUnit) SetValues() {
-	key := strings.Split(unit.Bus, "-")[0]
-
 	unit.DateCreated = fmt.Sprint(time.Now().Unix())
-	unit.ID = fmt.Sprintf("%s-%s", key, strings.ToUpper(unit.Code))
+	unit.ID = fmt.Sprintf("%s%s", strings.ToUpper(unit.Code), unit.DateCreated[2:8])
 }
 
 // ValidateUpdate validates bus unit field if they are empty or not
@@ -97,6 +105,14 @@ func (unit *BusUnit) SetValues() {
 // Fields that are validated:
 //  active, capacity
 func (unit *BusUnit) ValidateUpdate(old *BusUnit) {
+	if unit.Bus == "" {
+		unit.Bus = old.Bus
+	}
+
+	if unit.Code == "" {
+		unit.Code = old.Code
+	}
+
 	if unit.Active == nil {
 		unit.Active = old.Active
 	}
@@ -115,9 +131,50 @@ type BusRoute struct {
 	Available     *bool   `json:"available"`      // Defines if the bus is available for that route
 	DepartureTime string  `json:"departure_time"` // Expected departure time on the starting point
 	ArrivalTime   string  `json:"arrival_time"`   // Expected arrival time on the destination
-	FromRoute     string  `json:"route_from"`     // Indicating the starting point of a bus
-	ToRoute       string  `json:"route_to"`       // Indicating the destination of bus
+	FromRoute     string  `json:"route_from"`     // Indicating the starting point of a bus and in 24-hour format
+	ToRoute       string  `json:"route_to"`       // Indicating the destination of bus and in 24-hour format
 	DateCreated   string  `json:"date_created"`   // The date it was created as unix epoch time
+}
+
+func (route BusRoute) Key() string {
+	var key string
+
+	from, err := common.RemoveVowel(route.FromRoute)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "BusRouteKey", Message: "Failed to remove vowel letters."})
+		return ""
+	}
+
+	from, err = common.RemoveSymbols(from)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "BusRouteKey", Message: "Failed to remove symbols."})
+		return ""
+	}
+
+	to, err := common.RemoveVowel(route.ToRoute)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "BusRouteKey", Message: "Failed to remove vowel letters."})
+		return ""
+	}
+
+	to, err = common.RemoveSymbols(to)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "BusRouteKey", Message: "Failed to remove symbols."})
+		return ""
+	}
+
+	to = strings.ToUpper(to)
+	from = strings.ToUpper(from)
+	key = fmt.Sprintf("%s%s%s%s", from, route.DepartureTime, route.ArrivalTime, to)
+
+	return key
+}
+
+// SetValues automatically generates the Bus Route ID as your primary
+// key, and set the date it was created as unix epoch time.
+func (route *BusRoute) SetValues() {
+	route.ID = route.Key()
+	route.DateCreated = fmt.Sprint(time.Now().Unix())
 }
 
 // ValidateUpdate validates bus route field if they are empty or not

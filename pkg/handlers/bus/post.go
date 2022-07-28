@@ -19,10 +19,15 @@ import (
 	"github.com/rmarasigan/bus-ticketing/pkg/validate"
 )
 
-// Post is the Bus API request POST method that will process the "create" and "update" type request.
-// To process the request, request query "type" is required and the value must be either "create", or "update".
+// Post is the Bus API request POST method that will process the "create" and "update" type requests.
+// To process the request, the request query parameter "type" is required, and the value must be either
+// "create" or "update". If none of the said type parameter values is satisfied, it will return an API
+// Gateway response of an HTTP StatusNotImplemented.
+//
+// Endpoint:
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus?type={value}
 func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	// Creates DynamoDB Session
+	// Intialize DynamoDB Session
 	service.DynamodbSession()
 
 	tablename := os.Getenv("BUS_TABLE")
@@ -33,7 +38,7 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 	}
 
 	if queryType == "" {
-		return api.StatusBadRequest(errors.New("method.request.querystring.type is not set"))
+		return api.StatusUnhandledRequest(errors.New("method.request.querystring.type is not set"))
 	}
 
 	switch queryType {
@@ -48,14 +53,34 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 	}
 }
 
-// CreateBus creates a new bus company information and validates if the required fields
-// are not empty before saving to the DynamoDB table.
+// CreateBus creates a new item entry of bus company information and validates if the required fields
+// are not empty before saving it to the DynamoDB table. After saving the Bus information it will
+// return an API Gateway response of an HTTP StatusOK.
+//
+// Endpoint:
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus?type=create
+//
+// Payload Parameters:
+//  owner: bus company owner
+//  company: name of the company and serves as your sort key
+//  address: bus company complete address
+//  email: bus company email
+//  mobile_number: bus company mobile number
+//
+// Payload Request:
+//  {
+//    "owner": "Thando Oyibo Emmett",
+//    "company": "Rail Bus Way",
+//    "address": "1986 Bogisich Junctions, Hamillhaven, Kansas",
+//    "email": "thando.emmet@outlook.com",
+//    "mobile_number": "+1-335-908-1432"
+//  }
 func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
 	bus := new(models.Bus)
 
 	err := api.ParseJSON(body, bus)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse bus json"})
+		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse bus json."})
 		return api.StatusBadRequest(err)
 	}
 
@@ -64,8 +89,8 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	if isValid != "" {
 		err := errors.New(isValid)
 
-		cw.Error(err, &cw.Logs{Code: "CreateBus", Message: "Validate creation of bus"})
-		return api.StatusUnhandledRequest(err)
+		cw.Error(err, &cw.Logs{Code: "CreateBus", Message: "Validate creation of bus."})
+		return api.StatusBadRequest(err)
 	}
 
 	bus.SetValues()
@@ -73,11 +98,11 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	// Converting the record to dynamodb.AttributeValue type.
 	value, err := dynamodbattribute.MarshalMap(bus)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBMarshalMap", Message: " Failed to marshal bus"})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBMarshalMap", Message: " Failed to marshal bus data."})
 		return api.StatusBadRequest(err)
 	}
 
-	// Creating the data that you want to send to dynamoDB
+	// Creating the data that you want to send to DynamoDB
 	input := &dynamodb.PutItemInput{
 		Item:      value, // Map of attribute name-value pairs, one for each attribute
 		TableName: aws.String(tablename),
@@ -86,27 +111,50 @@ func CreateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	// Creates a new item or replaces an old item with a new item.
 	_, err = svc.PutItem(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBPutItem", Message: "Failed to add item to the table"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBPutItem", Message: "Failed to add item to the table."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 
 	return api.StatusOK(bus)
 }
 
-// UpdateBus updates, validates and returns the updated bus information.
+// UpdateBus validates the field before saving the item to the DynamoDB table and updates and returns
+// the updated bus information. After updating the bus information, it will return an API Gateway
+// response of an HTTP StatusOK.
+//
+// Endpoint:
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus?type=update
+//
+// Payload Parameter accepts:
+//  id: bus ID as the primary key and is a required field
+//  company: name of the company that will serve as your sort key and is a required field
+//  owner: bus company owner
+//  address: bus company complete address
+//  email: bus company email
+//  mobile_number: bus company mobile number
+//
+// Payload Request:
+//  {
+//    "id": "RLBSW-589710"
+//    "owner": "Thando Oyibo Emmett",
+//    "company": "Rail Bus Way",
+//    "address": "1986 Bogisich Junctions, Hamillhaven, Kansas",
+//    "email": "thando.emmet@outlook.com",
+//    "mobile_number": "+1-335-908-1432"
+//  }
 func UpdateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
 	bus := new(models.Bus)
 
 	err := api.ParseJSON(body, bus)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse bus json"})
+		cw.Error(err, &cw.Logs{Code: "ParseJSONError", Message: "Failed to parse bus json."})
 		return api.StatusBadRequest(err)
 	}
 
 	// Get bus information using the ID
 	busInfo, err := BusInformation(tablename, bus.ID, svc)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "BusInformation", Message: "Failed to get bus information"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "BusInformation", Message: "Failed to get bus information."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 
@@ -127,7 +175,7 @@ func UpdateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	// Using the update to create a DynamoDB Expression.
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBExpression", Message: "Failed to build an expression"})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBExpression", Message: "Failed to build an expression."})
 		return api.StatusBadRequest(err)
 	}
 
@@ -144,14 +192,14 @@ func UpdateBus(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*e
 	// Update an item in a table.
 	result, err := svc.UpdateItem(input)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBUpdateItem", Message: "Failed to update item"}, kvp.Attribute{Key: "tablename", Value: tablename})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBUpdateItem", Message: "Failed to update item."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 
 	// Returns a bus response in JSON format.
 	err = service.DynamoDBAttributeResponse(bus, result.Attributes)
 	if err != nil {
-		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal bus response"})
+		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal bus response."})
 		return api.StatusBadRequest(err)
 	}
 

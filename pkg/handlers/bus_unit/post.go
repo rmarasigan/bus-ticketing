@@ -25,13 +25,17 @@ var (
 	BUS_TABLE string
 )
 
-// Post is the Bus Unit API request POST method that will process the "create" and "update" type request.
+// Post is the Bus Unit API request POST method that will process the "create" and "update" type requests.
+// To process the request, the request query parameter "type" is required and the value must be either
+// "create", or "update", also the request query parameter "bus". If none of the said "type" parameter
+// values is satisfied it will return an API Gateway response of an HTTP StatusNotImplemented.
 //
 // Query Parameter:
-// 	bus: it is the bus id and a required parameter.
-// 	type: the value must be either "create", or "update" and a required parameter.
+//  bus: it is the bus id and a required parameter.
+//  type: the value must be either "create" or "update" and a required parameter.
 //
-// Endpoint: https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?type={value}&bus={value}
+// Endpoint:
+//  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit/?type={value}&bus={value}
 func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	service.DynamodbSession()
 
@@ -65,14 +69,14 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 	}
 }
 
-// CreateBusUnit creates a new item to the DynamoDB table. Bus ID is a required field in order
-// to connect the Bus Unit information to the parent Bus. After saving the Bus Unit information
+// CreateBusUnit creates a new item to the DynamoDB table. Bus ID is a required field to
+// connect the Bus Unit information to the parent Bus. After saving the Bus Unit information
 // it will return an API Gateway response.
 //
 // Payload Parameters:
 //  active: whether the bus is on trip
-//  code: uniqe identification of a bus unit
-//  capacity: the number of passenger of a bus unit
+//  code: unique identification of a bus unit
+//  capacity: the number of passengers of a bus unit
 //
 // Payload Request:
 //  {
@@ -83,10 +87,11 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
 	unit := new(models.BusUnit)
 
-	if len(body) == 0 {
-		err := errors.New("request body is not set")
+	// Checks if the request payload body is set.
+	if len(body) == 0 || body == nil {
+		err := errors.New("payload is not set")
 
-		cw.Error(err, &cw.Logs{Code: "CreateBusUnit", Message: "Request cannot be processed as the request body is empty."})
+		cw.Error(err, &cw.Logs{Code: "CreateBusUnit", Message: "Request cannot be processed as payload is not set"})
 		return api.StatusBadRequest(err)
 	}
 
@@ -150,7 +155,7 @@ func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 // Payload Parameter accepts:
 //  active: whether the bus is on trip
 //  id: unique bus unit ID as the primary key
-//  capacity: the number of passenger of a bus unit
+//  capacity: the number of passengers of a bus unit
 //
 // Payload Request:
 //  {
@@ -161,10 +166,11 @@ func CreateBusUnit(tablename string, busID string, body []byte, svc dynamodbifac
 func UpdateBusUnit(tablename string, busID string, body []byte, svc dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
 	unit := new(models.BusUnit)
 
-	if len(body) == 0 {
-		err := errors.New("request body is not set")
+	// Checks if the request payload body is set.
+	if len(body) == 0 || body == nil {
+		err := errors.New("payload is not set")
 
-		cw.Error(err, &cw.Logs{Code: "UpdateBusUnit", Message: "Request cannot be processed as request body is empty."})
+		cw.Error(err, &cw.Logs{Code: "UpdateBusUnit", Message: "Request cannot be processed as payload is not set"})
 		return api.StatusBadRequest(err)
 	}
 

@@ -150,7 +150,7 @@ func BusUnitInformation(tablename string, id string, svc dynamodbiface.DynamoDBA
 	return busUnit, nil
 }
 
-// ValidateBusUnitCode returns boolean and error value to check whether the bus unit code already exist or not.
+// ValidateBusUnitCode returns a boolean and error value to check whether the bus unit code already exists or not.
 func ValidateBusUnitCode(tablename string, code string, svc dynamodbiface.DynamoDBAPI) (bool, error) {
 	// Construct the filter builder with a name and value.
 	// WHERE code = code_value

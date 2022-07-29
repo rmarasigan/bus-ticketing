@@ -29,5 +29,17 @@ func RemoveSymbols(str string) (string, error) {
 	}
 
 	return regex.ReplaceAllString(str, ""), nil
+}
 
+// IsNumberOnly checks whether the input string is a number. It accepts
+// positive fractional number, including zero (0, 1, 0.0, 1.0, 99999.000001,
+// 5.1).
+func IsNumberOnly(str string) (bool, error) {
+	regex, err := regexp.Compile(`^(0|[1-9]\d*)(\.\d+)?$`)
+	if err != nil {
+		cw.Error(err, &cw.Logs{Code: "IsNumberOnly", Message: "Failed to parse regex expression."})
+		return false, err
+	}
+
+	return regex.MatchString(str), nil
 }

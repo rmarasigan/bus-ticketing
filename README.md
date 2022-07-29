@@ -121,6 +121,7 @@ In your browser, visit: [godoc-server](http://localhost:6060)
 ## Reference
 * [Stacks](https://docs.aws.amazon.com/cdk/v2/guide/stacks.html)
 * [Godoc Command](https://stackoverflow.com/a/61300854)
+* [Regex Numbers](https://stackoverflow.com/a/39399503)
 * [Flag Features](https://github.com/aws/aws-cdk/blob/v1-main/packages/@aws-cdk/cx-api/lib/features.ts)
 * [0055 Feature Flags](https://github.com/aws/aws-cdk-rfcs/blob/master/text/0055-feature-flags.md)
 * [`npm` CLI Commands](https://docs.npmjs.com/cli/v6/commands)

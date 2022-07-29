@@ -16,23 +16,23 @@ func CreateBus(bus *models.Bus) string {
 	var err_msg string
 
 	if bus.Company == "" {
-		msg = append(msg, "Company")
+		msg = append(msg, "company")
 	}
 
 	if bus.Owner == "" {
-		msg = append(msg, "Owner")
+		msg = append(msg, "owner")
 	}
 
 	if bus.Email == "" {
-		msg = append(msg, "Email")
+		msg = append(msg, "email")
 	}
 
 	if bus.Address == "" {
-		msg = append(msg, "Address")
+		msg = append(msg, "address")
 	}
 
 	if bus.MobileNumber == "" {
-		msg = append(msg, "MobileNumber")
+		msg = append(msg, "mobile_number")
 	}
 
 	if len(msg) > 0 {
@@ -51,15 +51,15 @@ func CreateBusUnit(unit *models.BusUnit) string {
 	var err_msg string
 
 	if unit.Code == "" {
-		msg = append(msg, "Code")
+		msg = append(msg, "code")
 	}
 
 	if unit.Active == nil {
-		msg = append(msg, "Active")
+		msg = append(msg, "active")
 	}
 
 	if unit.Capacity == 0 {
-		msg = append(msg, "Capacity")
+		msg = append(msg, "capacity")
 	}
 
 	if len(msg) > 0 {
@@ -72,34 +72,38 @@ func CreateBusUnit(unit *models.BusUnit) string {
 // CreateBusRoute checks if the required request parameters are empty or not.
 // If some of the fields are emtpy, it will return an error message.
 //
-// Required request parameter: rate, departure_time, arrival_time, from_route
-// to_route, available
+// Required request parameter: rate, currency_code, departure_time, arrival_time,
+// from_route, to_route, available
 func CreateBusRoute(route *models.BusRoute) string {
 	var msg []string
 	var err_msg string
 
 	if route.Rate <= 0 {
-		msg = append(msg, "Rate")
+		msg = append(msg, "rate")
+	}
+
+	if route.Currency == "" {
+		msg = append(msg, "currency_code")
 	}
 
 	if route.Available == nil {
-		msg = append(msg, "Available")
+		msg = append(msg, "available")
 	}
 
 	if route.DepartureTime == "" {
-		msg = append(msg, "DepartureTime")
+		msg = append(msg, "departure_time")
 	}
 
 	if route.ArrivalTime == "" {
-		msg = append(msg, "ArrivalTime")
+		msg = append(msg, "arrival_time")
 	}
 
 	if route.FromRoute == "" {
-		msg = append(msg, "FromRoute")
+		msg = append(msg, "from_route")
 	}
 
 	if route.ToRoute == "" {
-		msg = append(msg, "ToRoute")
+		msg = append(msg, "to_route")
 	}
 
 	if len(msg) > 0 {

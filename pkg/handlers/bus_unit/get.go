@@ -144,12 +144,13 @@ func BusUnitInformation(tablename string, id string) (*models.BusUnit, error) {
 		return nil, err
 	}
 
+	// Checks if there are items returned.
 	if len(result.Items) == 0 {
 		cw.Info(&cw.Logs{Code: "DynamoDBAPI", Message: "No data found"})
 		return nil, errors.New("bus unit information not found")
 	}
 
-	// Unmarshal a map into actual user which front-end can uderstand as a JSON
+	// Unmarshal a map into actual bus unit object.
 	err = service.DynamoDBAttributeResponse(busUnit, result.Items[0])
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributeResponse", Message: "Failed to unmarshal bus unit response"})
@@ -226,7 +227,7 @@ func FilterActiveBusUnit(tablename string, active bool) (*events.APIGatewayProxy
 		return api.StatusOK("no active bus unit")
 	}
 
-	// Unmarshal a map into actual bus unit.
+	// Unmarshal a map into actual bus unit object.
 	err = service.DynamoDBAttributesResponse(busUnit, result.Items)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributesResponse", Message: "Failed to unmarshal bus unit response"})
@@ -273,7 +274,7 @@ func FilterCapacityBusUnit(tablename string, capacity int) (*events.APIGatewayPr
 		return api.StatusOK("no active bus unit")
 	}
 
-	// Unmarshal a map into actual bus unit.
+	// Unmarshal a map into actual bus unit object.
 	err = service.DynamoDBAttributesResponse(busUnit, result.Items)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributesResponse", Message: "Failed to unmarshal bus unit response"})
@@ -301,7 +302,7 @@ func ListBusUnit(tablename string) (*events.APIGatewayProxyResponse, error) {
 		return api.StatusOK("no bus unit data available.")
 	}
 
-	// Unmarshal a map into actual bus unit.
+	// Unmarshal a map into actual bus unit object.
 	err = service.DynamoDBAttributesResponse(busUnits, result.Items)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributesResponse", Message: "Failed to unmarshal bus unit response."})

@@ -67,7 +67,7 @@ func CreateUser(tablename string, body []byte, svc dynamodbiface.DynamoDBAPI) (*
 		err := errors.New(isValid)
 
 		cw.Error(err, &cw.Logs{Code: "CreateUserAccount", Message: "Validate creation of account"})
-		return api.StatusUnhandledRequest(err)
+		return api.StatusBadRequest(err)
 	}
 
 	// Checks whether the username exist or not.

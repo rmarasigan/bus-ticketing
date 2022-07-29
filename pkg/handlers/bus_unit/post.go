@@ -160,7 +160,8 @@ func CreateBusUnit(tablename string, busID string, body []byte) (*events.APIGate
 }
 
 // UpdateBusUnit updates and validates the field before saving the item to the DynamoDB table.
-// After updating the bus unit information, it returns an API Gateway response.
+// After updating the bus unit information, it returns an API Gateway response. Bus ID and Bus
+// Unit Code parameters cannot be updated.
 //
 // Endpoint:
 //  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/unit?type=update

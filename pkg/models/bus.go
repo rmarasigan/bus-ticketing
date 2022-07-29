@@ -127,12 +127,13 @@ type BusRoute struct {
 	ID            string  `json:"id"`             // Unique bus route ID as the primary key
 	Bus           string  `json:"bus"`            // The Bus ID as the sort key
 	BusUnit       string  `json:"bus_unit"`       // The Bus Unit ID for the identification of specific bus unit route
+	Currency      string  `json:"currency_code"`  // Medium of exchange for goods and services
 	Rate          float64 `json:"rate"`           // Fare charged to the passenger
 	Available     *bool   `json:"available"`      // Defines if the bus is available for that route
 	DepartureTime string  `json:"departure_time"` // Expected departure time on the starting point
 	ArrivalTime   string  `json:"arrival_time"`   // Expected arrival time on the destination
-	FromRoute     string  `json:"route_from"`     // Indicating the starting point of a bus and in 24-hour format
-	ToRoute       string  `json:"route_to"`       // Indicating the destination of bus and in 24-hour format
+	FromRoute     string  `json:"from_route"`     // Indicating the starting point of a bus and in 24-hour format
+	ToRoute       string  `json:"to_route"`       // Indicating the destination of bus and in 24-hour format
 	DateCreated   string  `json:"date_created"`   // The date it was created as unix epoch time
 }
 
@@ -165,7 +166,9 @@ func (route BusRoute) Key() string {
 
 	to = strings.ToUpper(to)
 	from = strings.ToUpper(from)
-	key = fmt.Sprintf("%s%s%s%s", from, route.DepartureTime, route.ArrivalTime, to)
+	departure := strings.ReplaceAll(route.DepartureTime, ":", "")
+	arrival := strings.ReplaceAll(route.ArrivalTime, ":", "")
+	key = fmt.Sprintf("%s%s%s%s%s", from, to, departure, arrival, route.DateCreated[2:8])
 
 	return key
 }
@@ -173,18 +176,26 @@ func (route BusRoute) Key() string {
 // SetValues automatically generates the Bus Route ID as your primary
 // key, and set the date it was created as unix epoch time.
 func (route *BusRoute) SetValues() {
-	route.ID = route.Key()
 	route.DateCreated = fmt.Sprint(time.Now().Unix())
+	route.ID = route.Key()
 }
 
 // ValidateUpdate validates bus route field if they are empty or not
 // to set its previous value.
 //
 // Fields that are validated:
-//  rate, available, departure_time, arrival_time, from_route, to_route
+//  rate, currency_code, available, departure_time, arrival_time, from_route, to_route
 func (route *BusRoute) ValidateUpdate(old *BusRoute) {
+	if route.ID == "" {
+		route.ID = old.ID
+	}
+
 	if route.Rate <= 0 {
 		route.Rate = old.Rate
+	}
+
+	if route.Currency == "" {
+		route.Currency = old.Currency
 	}
 
 	if route.Available == nil {

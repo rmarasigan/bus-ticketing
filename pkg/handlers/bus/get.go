@@ -31,7 +31,10 @@ func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.A
 	queryCompany := request.QueryStringParameters["company"]
 
 	if tablename == "" {
-		return api.StatusUnhandledRequest(errors.New("dynamodb table on env is not implemented"))
+		err := errors.New("dynamodb table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_BusTable not set on env."})
+		return api.StatusUnhandledRequest(err)
 	}
 
 	if queryCompany != "" {

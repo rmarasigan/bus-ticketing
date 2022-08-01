@@ -26,11 +26,17 @@ func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.A
 	queryUserID := request.QueryStringParameters["id"]
 
 	if tablename == "" {
-		return api.StatusUnhandledRequest(errors.New("dynamodb table on env is not implemented"))
+		err := errors.New("dynamodb table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_UsersTable not set on env."})
+		return api.StatusUnhandledRequest(err)
 	}
 
 	if queryUserID == "" {
-		return api.StatusBadRequest(errors.New("method.request.querystring.id is not set"))
+		err := errors.New("method.request.querystring.id is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "APIParameter", Message: "Query string id is not implemented."})
+		return api.StatusBadRequest(err)
 	}
 
 	response, err := UserInformation(tablename, queryUserID, service.DynamoDBClient)

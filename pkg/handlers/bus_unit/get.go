@@ -87,6 +87,13 @@ func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.A
 
 	tablename := os.Getenv("BUS_UNIT_TABLE")
 
+	if tablename == "" {
+		err := errors.New("dynamodb table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_BusUnitTable not set on env."})
+		return api.StatusUnhandledRequest(err)
+	}
+
 	queryActive := request.QueryStringParameters["active"]
 	queryCapacity := request.QueryStringParameters["capacity"]
 

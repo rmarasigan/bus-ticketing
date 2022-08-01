@@ -42,6 +42,13 @@ func Get(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.A
 	queryDeparture := request.QueryStringParameters["departure"]
 	queryArrival := request.QueryStringParameters["arrival"]
 
+	if tablename == "" {
+		err := errors.New("busroute dynamodb table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_BusRouteTable is not implemented on env."})
+		return api.StatusUnhandledRequest(err)
+	}
+
 	if queryToRoute != "" || queryFromRoute != "" {
 		return BusRoute(tablename, queryFromRoute, queryToRoute)
 	}
@@ -231,7 +238,7 @@ func BusRouteSchedule(tablename string, departure string, arrival string) (*even
 		return api.StatusOK("no bus routes data found")
 	}
 
-	// Unmarshal a map into actual bus route object
+	// Unmarshal a map into actual bus route object.
 	err = service.DynamoDBAttributesResponse(busRoutes, result.Items)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributesResponse", Message: "Failed to unmarshal result to busRoutes"})
@@ -247,19 +254,24 @@ func BusRouteSchedule(tablename string, departure string, arrival string) (*even
 //  https://{api-id}.execute.api.{region}.amazonaws.com/{stage}/bus/route/
 func ListBusRoute(tablename string) (*events.APIGatewayProxyResponse, error) {
 	busRoutes := new([]models.BusRoute)
+
+	// Use the built expression to populate the DynamoDB Scan API input parameters.
 	input := &dynamodb.ScanInput{TableName: aws.String(tablename)}
 
+	// Returns one or more items.
 	result, err := svc.Scan(input)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBScan", Message: "Failed to scan input."}, kvp.Attribute{Key: "tablename", Value: tablename})
 		return api.StatusBadRequest(err)
 	}
 
+	// Checks if there are items returned.
 	if len(result.Items) == 0 {
 		cw.Info(&cw.Logs{Code: "DynamoDBAPI", Message: "There's no entry of bus route data"})
 		return api.StatusOK("no bus routes data")
 	}
 
+	// Unmarshal a map into actual bus route object.
 	err = service.DynamoDBAttributesResponse(busRoutes, result.Items)
 	if err != nil {
 		cw.Error(err, &cw.Logs{Code: "DynamoDBAttributesResponse", Message: "Failed to unmarshal result to busRoutes"})

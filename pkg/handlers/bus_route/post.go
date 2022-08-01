@@ -41,14 +41,20 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 	queryType := request.QueryStringParameters["type"]
 
 	if queryType == "" {
-		return api.StatusUnhandledRequest(errors.New("method.querystring.parameter.type is not implemented"))
+		err := errors.New("method.request.querystring.type is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "APIParameter", Message: "Query string type is not implemented."})
+		return api.StatusUnhandledRequest(err)
 	}
 
 	switch queryType {
 	case "create":
 		queryBusUnit := request.QueryStringParameters["unit"]
 		if queryBusUnit == "" {
-			return api.StatusUnhandledRequest(errors.New("method.querystring.parameter.unit is not implemented"))
+			err := errors.New("method.request.querystring.unit is not implemented")
+
+			cw.Error(err, &cw.Logs{Code: "APIParameter", Message: "Query string unit is not implemented."})
+			return api.StatusUnhandledRequest(err)
 		}
 
 		return CreateBusRoute(tablename, queryBusUnit, []byte(request.Body))
@@ -92,7 +98,7 @@ func CreateBusRoute(tablename string, unit string, body []byte) (*events.APIGate
 	busUnitTable := os.Getenv("BUS_UNIT_TABLE")
 
 	// Checks if the request payload body is set.
-	if len(body) == 0 || body == nil {
+	if len(body) == 0 {
 		err := errors.New("payload is not set")
 
 		cw.Error(err, &cw.Logs{Code: "CreateBusRoute", Message: "Request cannot be processed as payload is not set."})

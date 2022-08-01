@@ -29,11 +29,17 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 	queryType := request.QueryStringParameters["type"]
 
 	if tablename == "" {
-		return api.StatusUnhandledRequest(errors.New("dynamodb table on env is not implemented"))
+		err := errors.New("dynamodb table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_UsersTable not set on env."})
+		return api.StatusUnhandledRequest(err)
 	}
 
 	if queryType == "" {
-		return api.StatusBadRequest(errors.New("method.request.querystring.type is not set"))
+		err := errors.New("method.request.querystring.type is not set")
+
+		cw.Error(err, &cw.Logs{Code: "APIParameter", Message: "Query string type is not implemented."})
+		return api.StatusBadRequest(err)
 	}
 
 	switch queryType {

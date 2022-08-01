@@ -19,10 +19,6 @@ import (
 	"github.com/rmarasigan/bus-ticketing/pkg/validate"
 )
 
-var (
-	BUS_TABLE string
-)
-
 // Post is the Bus Unit API request POST method that will process the "create" and "update" type requests.
 // To process the request, the request query parameter "type" is required and the value must be either
 // "create", or "update", also the request query parameter "bus". If none of the said "type" parameter
@@ -38,27 +34,43 @@ func Post(ctx context.Context, request *events.APIGatewayProxyRequest) (*events.
 	service.DynamodbSession()
 	svc = service.DynamoDBClient
 
-	BUS_TABLE = os.Getenv("BUS_TABLE")
+	busTable := os.Getenv("BUS_TABLE")
 	tablename := os.Getenv("BUS_UNIT_TABLE")
 
 	queryBus := request.QueryStringParameters["bus"]
 	queryType := request.QueryStringParameters["type"]
 
 	if tablename == "" {
-		return api.StatusUnhandledRequest(errors.New("dynamodb table on env is not implemented"))
+		err := errors.New("dynamodb table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_BusUnitTable not set on env."})
+		return api.StatusUnhandledRequest(err)
+	}
+
+	if busTable == "" {
+		err := errors.New("bus table on env is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "DynamoDBConfig", Message: "BusTicketing_BusTable not set on env."})
+		return api.StatusUnhandledRequest(err)
 	}
 
 	if queryType == "" {
-		return api.StatusBadRequest(errors.New("method.request.querystring.type is not set"))
+		err := errors.New("method.request.querystring.type is not implemented")
+
+		cw.Error(err, &cw.Logs{Code: "APIParameter", Message: "Query stirng type is not implemented."})
+		return api.StatusBadRequest(err)
 	}
 
 	switch queryType {
 	case "create":
 		if queryBus == "" {
-			return api.StatusBadRequest(errors.New("method.request.querystring.bus is not set"))
+			err := errors.New("method.request.querystring.bus is not implemented")
+
+			cw.Error(err, &cw.Logs{Code: "APIParameter", Message: "Query stirng bus is not implemented."})
+			return api.StatusBadRequest(err)
 		}
 
-		_, err := bus.BusInformation(BUS_TABLE, queryBus)
+		_, err := bus.BusInformation(busTable, queryBus)
 		if err != nil {
 			err = errors.New("bus id not found")
 

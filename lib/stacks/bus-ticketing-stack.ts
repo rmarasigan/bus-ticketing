@@ -250,7 +250,7 @@ export class BusTicketingStack extends cdk.Stack
     });
     busTripApi.addMethod('POST', busTripApiIntegration, {
       requestParameters: {
-        'method.request.querystring.type': true,
+        'method.request.querystring.seat': true,
         'method.request.querystring.route': true
       }
     });

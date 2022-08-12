@@ -4,12 +4,15 @@ A mini-project that lets the passenger create an account, book a bus ticket, and
 
 ## Useful commands
 
+* `npm install`     install projects dependencies
 * `npm run build`   compile typescript to js
 * `npm run watch`   watch for changes and compile
 * `npm run test`    perform the jest unit tests
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
+* `cdk bootstrap`   deployment of AWS CloudFormation template to a specific AWS environment (account and region)
+* `cdk destroy`     destroy this stack from your default AWS account/region
 
 ## Create new CDK App
 To list the available options we can use the `--list` parameter flag to the command.
@@ -119,7 +122,6 @@ using module mode; GOMOD=/home/dev/go/src/github.com/username/repo-name/go.mod
 In your browser, visit: [godoc-server](http://localhost:6060)
 
 ## Reference
-* [Stacks](https://docs.aws.amazon.com/cdk/v2/guide/stacks.html)
 * [Godoc Command](https://stackoverflow.com/a/61300854)
 * [Regex Numbers](https://stackoverflow.com/a/39399503)
 * [Flag Features](https://github.com/aws/aws-cdk/blob/v1-main/packages/@aws-cdk/cx-api/lib/features.ts)
@@ -131,3 +133,10 @@ In your browser, visit: [godoc-server](http://localhost:6060)
 * [npm vs npx — What’s the Difference?](https://www.freecodecamp.org/news/npm-vs-npx-whats-the-difference/)
 * [What are the differences between npm and npx?](https://www.geeksforgeeks.org/what-are-the-differences-between-npm-and-npx/)
 * [AWS CDK Tutorial for Beginners - Step-by-Step Guide](https://bobbyhadz.com/blog/aws-cdk-tutorial-typescript)
+
+### AWS Documentation
+* [Stacks](https://docs.aws.amazon.com/cdk/v2/guide/stacks.html)
+* [x-amazon-apigateway-integration.responseTemplates object](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration-responseTemplates.html)
+* [x-amazon-apigateway-integration.requestParameters object](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration-requestParameters.html)
+* [API Gateway mapping template and access logging variable reference](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html)
+* [Amazon API Gateway API request and response data mapping reference](https://docs.aws.amazon.com/apigateway/latest/developerguide/request-response-data-mappings.html)

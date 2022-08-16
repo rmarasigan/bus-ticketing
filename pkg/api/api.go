@@ -46,6 +46,17 @@ func StatusBadRequest(err error) (*events.APIGatewayProxyResponse, error) {
 	}, nil
 }
 
+// StatusBadRequestWithBody returns a response of an HTTP StatusBadRequest with body.
+func StatusBadRequestWithBody(body map[string]interface{}) (*events.APIGatewayProxyResponse, error) {
+	return &events.APIGatewayProxyResponse{
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		StatusCode: http.StatusBadRequest,
+		Body:       string(EncodeResponse(body)),
+	}, nil
+}
+
 // StatusUnhandledMethod returns a response of an HTTP StatusMethodNotAllowed and an error message of unhandled method.
 func StatusUnhandledMethod() (*events.APIGatewayProxyResponse, error) {
 	body := string(EncodeResponse(Error{Message: errors.New("unhandled method").Error()}))

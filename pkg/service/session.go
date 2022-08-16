@@ -7,13 +7,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/eventbridge"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	cw "github.com/rmarasigan/bus-ticketing/pkg/cw/logger"
 )
 
 var (
-	SQSClient         *sqs.SQS
-	DynamoDBClient    dynamodbiface.DynamoDBAPI
+	SQSClient         sqsiface.SQSAPI
 	EventBridgeClient *eventbridge.EventBridge
+	DynamoDBClient    dynamodbiface.DynamoDBAPI
 )
 
 // newSession creates a new session with custom configuration value.

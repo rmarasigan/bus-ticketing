@@ -75,6 +75,25 @@ env: {
 
 For more information, see [Environments](https://docs.aws.amazon.com/cdk/latest/guide/environments.html).
 
+## Using `Makefile` to install, bootstrap, and deploy the project
+
+1. Install all the dependencies and bootstrap your project
+    ```bash
+    dev@dev:~:bus-ticketing$ make init
+    ```
+
+    To initialize the project with specific AWS profile, you can pass a parameter called `profile`.
+    ```bash
+    dev@dev:~:bus-ticketing$ make init profile=profile_name
+    ```
+
+2. Deploy the project.
+    ```bash
+    dev@dev:~:bus-ticketing$ make deploy
+    # Deploying with specific AWS profile
+    dev@dev:~:bus-ticketing$ make deploy profile=profile_name
+    ```
+
 ## `npm`
 **npm** (node package manager) is the dependency or package manager you get out of the box when you install Node.js. The npm manages all the packages and modules for Node.js and consists of command-line client `npm`. A *package* contains all the files needed for a module and *modules* are the JavaScript libraries that can be included in the Node project according to the requirements of the project.
 

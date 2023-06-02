@@ -30,14 +30,31 @@ export class BusTicketingStack extends cdk.Stack
       removalPolicy: REMOVAL_POLICY
     });
 
+    // 2. Create a DynamoDB Table that will contain the bus line information that has
+    // a partition and sort key.
+    const BusTable = new dynamodb.Table(this, 'BusTicketing_BusTable', {
+      tableName: 'BusTicketing_BusTable',
+      partitionKey: {
+        name: "name",
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: "company",
+        type: dynamodb.AttributeType.STRING
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: REMOVAL_POLICY
+    });
+
     // ******************** Lambda Functions ******************** //
+    // ***** User Lambda Functions Specification ***** //
     const createUser = new lambda.Function(this, 'createUser', {
       memorySize: 1024,
       handler: 'createUser',
       functionName: 'createUser',
       runtime: lambda.Runtime.GO_1_X,
       timeout: cdk.Duration.seconds(60),
-      code: lambda.Code.fromAsset('cmd/createUser'),
+      code: lambda.Code.fromAsset('cmd/user/createUser'),
       description: 'A Lambda Function that will process API requests and create a new user account',
       environment: {
         "USERS_TABLE": UsersTable.tableName
@@ -52,7 +69,7 @@ export class BusTicketingStack extends cdk.Stack
       functionName: 'login',
       runtime: lambda.Runtime.GO_1_X,
       timeout: cdk.Duration.seconds(60),
-      code: lambda.Code.fromAsset('cmd/login'),
+      code: lambda.Code.fromAsset('cmd/user/login'),
       description: 'A Lambda Function that will process API requests and login the user account',
       environment: {
         "USERS_TABLE": UsersTable.tableName
@@ -67,7 +84,7 @@ export class BusTicketingStack extends cdk.Stack
       functionName: 'getUser',
       runtime: lambda.Runtime.GO_1_X,
       timeout: cdk.Duration.seconds(60),
-      code: lambda.Code.fromAsset('cmd/getUser'),
+      code: lambda.Code.fromAsset('cmd/user/getUser'),
       description: 'A Lambda Function that will process API requests and get the user account information',
       environment: {
         "USERS_TABLE": UsersTable.tableName
@@ -82,7 +99,7 @@ export class BusTicketingStack extends cdk.Stack
       functionName: 'updateUser',
       runtime: lambda.Runtime.GO_1_X,
       timeout: cdk.Duration.seconds(60),
-      code: lambda.Code.fromAsset('cmd/updateUser'),
+      code: lambda.Code.fromAsset('cmd/user/updateUser'),
       description: 'A Lambda Function that will process API requests and update the user account information',
       environment: {
         "USERS_TABLE": UsersTable.tableName
@@ -90,6 +107,22 @@ export class BusTicketingStack extends cdk.Stack
     });
     UsersTable.grantReadWriteData(updateUser);
     updateUser.applyRemovalPolicy(REMOVAL_POLICY);
+
+    // ***** Bus Lambda Functions Specification ***** //
+    const createBus = new lambda.Function(this, 'createBus', {
+      memorySize: 1024,
+      handler: 'createBus',
+      functionName: 'createBus',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus/createBus'),
+      description: 'A Lambda Function that will process API requests and create a new bus line information',
+      environment: {
+        "BUS_TABLE": BusTable.tableName
+      }
+    });
+    BusTable.grantReadWriteData(createBus);
+    createBus.applyRemovalPolicy(REMOVAL_POLICY);
 
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
@@ -105,7 +138,7 @@ export class BusTicketingStack extends cdk.Stack
     });
     api.applyRemovalPolicy(REMOVAL_POLICY);
 
-    // ********** API Gateway Integration ********** //
+    // ***** User API Specification ***** //
     const UserApiRoot = api.root.addResource('user');
     const UserAccountApiRoot = UserApiRoot.addResource('account');
 
@@ -134,5 +167,12 @@ export class BusTicketingStack extends cdk.Stack
         'method.request.querystring.username': true
       }
     });
+
+    // ***** Bus API Specification ***** //
+    const BusApiRoot = api.root.addResource('bus');
+
+    const createBusApiIntegration = new apigw.LambdaIntegration(createBus);
+    const createBusApi = BusApiRoot.addResource('create');
+    createBusApi.addMethod('POST', createBusApiIntegration);
   }
 }

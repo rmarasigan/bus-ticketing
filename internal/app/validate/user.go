@@ -55,7 +55,7 @@ func CreateUserAccount(user *schema.User) error {
 		fields = append(fields, "mobile_number")
 	}
 
-	if len(fields) != 0 {
+	if len(fields) > 0 {
 		return fmt.Errorf("missing %s field(s)", strings.Join(fields, ", "))
 	}
 
@@ -137,7 +137,7 @@ func IsUsernameExisting(ctx context.Context, username string) (bool, error) {
 
 	// Build the query params parameter
 	params := &dynamodb.QueryInput{
-		TableName:                 aws.String(env.USERS_TABLE),
+		TableName:                 aws.String(tablename),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),

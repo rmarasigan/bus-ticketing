@@ -43,7 +43,7 @@ type User struct {
 
 // Error sets the default key-value pair.
 func (user User) Error(err error, code, message string, kv ...utility.KVP) {
-	if (User{}) != user {
+	if user != (User{}) {
 		kv = append(kv, utility.KVP{Key: "user", Value: user})
 	}
 

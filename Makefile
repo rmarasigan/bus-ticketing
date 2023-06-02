@@ -1,6 +1,6 @@
 BASE_PATH := $(shell pwd)
-CMD_PATH := "cmd/"
-CMD_SRCS := $(shell cd $(CMD_PATH); ls)
+CMD_PATH := "cmd"
+CMD_DIRS := $(shell find $(CMD_PATH)/* -type d)
 GO_COMPILE:=GOOS=linux GOARCH=amd64 go build 
 
 .SILENT:
@@ -17,24 +17,29 @@ endif
 
 .PHONY: clean compile_all
 clean:
-	echo "ℹ️  CLEANING ALL  BUILD FILES..."
-	for src in $(CMD_SRCS); do \
-		echo "- $$src"; \
-		cd $(BASE_PATH)/$(CMD_PATH)$$src && \
-		if [ -f $$src ]; then \
-			rm $$src; \
+	echo "ℹ️  CLEANING ALL BUILD FILES..."
+	for base in $(CMD_DIRS); do \
+		dirname=$$(basename $$base); \
+		cd $(BASE_PATH)/$$base && \
+		if [ -f $(BASE_PATH)/$$base/$$dirname ]; then \
+			echo "- $$dirname"; \
+			rm $$dirname; \
 		fi; \
 	done
 	echo "\n"
 
 compile_all: clean
 	echo "ℹ️  STARTING TO COMPILE ALL..."
-	for src in $(CMD_SRCS); do \
-		echo "- $$src"; \
-		cd $(BASE_PATH)/$(CMD_PATH)$$src && \
-		$(GO_COMPILE) -o $$src main.go; \
+	for base in $(CMD_DIRS); do \
+		dirname=$$(basename $$base); \
+		cd $(BASE_PATH)/$$base && \
+		if [ -s main.go ]; then \
+			echo "- $$dirname"; \
+			cd $(BASE_PATH)/$$base && \
+			$(GO_COMPILE) -o $$dirname main.go; \
+		fi; \
 	done
-	echo "\n"; \
+	echo "\n"
 
 deploy: compile_all
 	echo "🚀 Deploying stack..."

@@ -15,6 +15,7 @@ import (
 // that will be marshaled into a AttributeValue.
 type Bus struct {
 	ID           string `json:"id" dynamodbav:"id"`                       // Unique bus ID as the primary key
+	Name         string `json:"name" dynamodbav:"name"`                   // Name of the bus line
 	Owner        string `json:"owner" dynamodbav:"owner"`                 // Bus company owner and is a required field
 	Email        string `json:"email" dynamodbav:"email"`                 // Bus company email and is a required field
 	Address      string `json:"address" dynamodbav:"address"`             // Bus company address and is a required field
@@ -23,15 +24,23 @@ type Bus struct {
 	DateCreated  string `json:"date_created" dynamodbav:"date_created"`   // The date it was created as unix epoch time
 }
 
+// Error sets the default key-value pair.
 func (bus Bus) Error(err error, code, message string, kv ...utility.KVP) {
+	if bus != (Bus{}) {
+		kv = append(kv, utility.KVP{Key: "bus", Value: bus})
+	}
+
 	kv = append(kv, utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus"})
 	utility.Error(err, code, message, kv...)
 }
 
-// Key uses company name, removes the vowel letters and converts
+// key uses company name, removes the vowel letters and converts
 // it to uppercase to generate a key value of bus that will be used
 // for the bus ID.
-func (bus Bus) Key() string {
+//
+// Example:
+//		id: RLBSW-856996
+func (bus Bus) key() string {
 	key, err := app.RemoveVowel(bus.Company)
 	if err != nil {
 		bus.Error(err, "Key", "failed to remove vowel letters.")
@@ -49,7 +58,11 @@ func (bus Bus) Key() string {
 
 // SetValues automatically generates the Bus ID as your primary key,
 // and set the date it was created as unix epoch time.
+//
+// Example:
+//		id: RLBSW-856996
+//		date_created: 1685699666
 func (bus *Bus) SetValues() {
 	bus.DateCreated = fmt.Sprint(time.Now().Unix())
-	bus.ID = fmt.Sprintf("%s-%s", bus.Key(), bus.DateCreated[2:8])
+	bus.ID = fmt.Sprintf("%s-%s", bus.key(), bus.DateCreated[2:8])
 }

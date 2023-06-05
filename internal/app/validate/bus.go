@@ -49,6 +49,31 @@ func CreateBusLine(bus schema.Bus) error {
 	return nil
 }
 
+// UpdateBusLineFields validates if the field that are going to be updated
+// are empty or not to set its previous value.
+//
+// Fields that are validated:
+//  owner, email, address, mobile_number
+func UpdateBusLineFields(bus schema.Bus, old schema.Bus) schema.Bus {
+	if bus.Owner == "" {
+		bus.Owner = old.Owner
+	}
+
+	if bus.Email == "" {
+		bus.Email = old.Email
+	}
+
+	if bus.Address == "" {
+		bus.Address = old.Address
+	}
+
+	if bus.MobileNumber == "" {
+		bus.MobileNumber = old.MobileNumber
+	}
+
+	return bus
+}
+
 // IsBusLineExisting checks if the DynamoDB Table is configured on the environment, and
 // returns a boolean and error value to check whether the bus line already exist or not.
 func IsBusLineExisting(ctx context.Context, name, company string) (bool, error) {

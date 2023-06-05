@@ -14,14 +14,14 @@ import (
 // The "dynamodbav" struct tag can be used to control the value
 // that will be marshaled into a AttributeValue.
 type Bus struct {
-	ID           string `json:"id" dynamodbav:"id"`                       // Unique bus ID as the primary key
-	Name         string `json:"name" dynamodbav:"name"`                   // Name of the bus line
-	Owner        string `json:"owner" dynamodbav:"owner"`                 // Bus company owner and is a required field
-	Email        string `json:"email" dynamodbav:"email"`                 // Bus company email and is a required field
-	Address      string `json:"address" dynamodbav:"address"`             // Bus company address and is a required field
-	Company      string `json:"company" dynamodbav:"company"`             // Name of the company and serves as your sort key and is a required field
-	MobileNumber string `json:"mobile_number" dynamodbav:"mobile_number"` // Bus company mobile number and is a required field
-	DateCreated  string `json:"date_created" dynamodbav:"date_created"`   // The date it was created as unix epoch time
+	ID           string `json:"id" dynamodbav:"id"`                                             // Unique bus ID
+	Name         string `json:"name" dynamodbav:"name"`                                         // Name of the bus line as the primary key
+	Owner        string `json:"owner" dynamodbav:"owner"`                                       // Bus company owner and is a required field
+	Email        string `json:"email" dynamodbav:"email"`                                       // Bus company email and is a required field
+	Address      string `json:"address" dynamodbav:"address"`                                   // Bus company address and is a required field
+	Company      string `json:"company" dynamodbav:"company"`                                   // Name of the company and serves as your sort key and is a required field
+	MobileNumber string `json:"mobile_number" dynamodbav:"mobile_number"`                       // Bus company mobile number and is a required field
+	DateCreated  string `json:"date_created,omitempty" dynamodbav:"date_created,omitemptyelem"` // The date it was created as unix epoch time
 }
 
 // Error sets the default key-value pair.

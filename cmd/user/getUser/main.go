@@ -21,7 +21,7 @@ func main() {
 // a 200 OK HTTP Status.
 //
 // Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/get?username=xxxxx
+//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/get?id=xxxxx&username=xxxxx
 //
 // Sample API Params:
 //  id=CSTMR-855048

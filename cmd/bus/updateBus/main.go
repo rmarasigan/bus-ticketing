@@ -1,0 +1,116 @@
+package main
+
+import (
+	"context"
+	"errors"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/rmarasigan/bus-ticketing/api"
+	"github.com/rmarasigan/bus-ticketing/api/schema"
+	"github.com/rmarasigan/bus-ticketing/internal/app/query"
+	"github.com/rmarasigan/bus-ticketing/internal/app/validate"
+	"github.com/rmarasigan/bus-ticketing/internal/utility"
+)
+
+func main() {
+	lambda.Start(handler)
+}
+
+// It receives the Amazon API Gateway event record data as input, validates the
+// request query and body, updates the bus line's information/record and responds
+// with a 200 OK HTTP Status.
+//
+// Endpoint:
+//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/bus/update?id=xxxxx&name=xxxxx
+//
+// Sample API Params:
+//  id=RLBSW-856996
+// 	name=Thunder Rail Bus Line
+//
+// Sample API Payload:
+// 	{
+// 		"address": "Långbro, Stockholm",
+// 		"mobile_number": "0567-8809105"
+// 	}
+//
+// Sample API Response:
+// 	{
+// 		"id": "RLBSW-856996",
+// 		"name": "Thunder Rail Bus Line",
+// 		"owner": "Thando Oyibo Emmett",
+// 		"email": "thando.emmet@outlook.com",
+// 		"address": "Långbro, Stockholm",
+// 		"company": "Rail Bus Way",
+// 		"mobile_number": "0567-8809105",
+// 		"date_created": "1685699666"
+// 	}
+func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	var (
+		bus        = new(schema.Bus)
+		id_query   = request.QueryStringParameters["id"]
+		name_query = request.QueryStringParameters["name"]
+	)
+
+	// Check whether the request queries are present
+	if id_query == "" {
+		err := errors.New("'id' parameter is not set")
+		bus.Error(err, "APIError", "'id' is not implemented")
+
+		return api.StatusBadRequest(err)
+	}
+
+	if name_query == "" {
+		err := errors.New("'name' parameter is not set")
+		bus.Error(err, "APIError", "'name' is not implemented")
+
+		return api.StatusBadRequest(err)
+	}
+
+	// Unmarshal the received JSON-encoded data
+	err := utility.ParseJSON([]byte(request.Body), bus)
+	if err != nil {
+		bus.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
+			utility.KVP{Key: "request", Value: request.Body})
+
+		return api.StatusInternalServerError()
+	}
+
+	// Fetch the existing bus line record/information
+	busLine, err := query.GetBusLine(ctx, id_query, name_query)
+	if err != nil {
+		bus.Error(err, "DynamoDBError", "failed to fetch the bus line information/record")
+		return api.StatusInternalServerError()
+	}
+
+	if busLine == (schema.Bus{}) {
+		err := errors.New("the bus line information you're trying to update is non-existent")
+		bus.Error(err, "APIError", "the bus line does not exist")
+
+		return api.StatusBadRequest(err)
+	}
+
+	// Create a composite key that has both the partition/primary key
+	// and the sort key of the item.
+	var compositeKey = map[string]types.AttributeValue{
+		"name":    &types.AttributeValueMemberS{Value: name_query},
+		"company": &types.AttributeValueMemberS{Value: busLine.Company},
+	}
+
+	// Construct the update builder
+	busLine = validate.UpdateBusLineFields(*bus, busLine)
+	var update = expression.Set(expression.Name("owner"), expression.Value(busLine.Owner)).
+		Set(expression.Name("email"), expression.Value(busLine.Email)).
+		Set(expression.Name("address"), expression.Value(busLine.Address)).
+		Set(expression.Name("mobile_number"), expression.Value(busLine.MobileNumber))
+
+	result, err := query.UpdateBusLine(ctx, compositeKey, update)
+	if err != nil {
+		busLine.Error(err, "DynamoDBError", "failed to update the bus line information/record")
+		return api.StatusInternalServerError()
+	}
+
+	return api.StatusOK(result)
+}

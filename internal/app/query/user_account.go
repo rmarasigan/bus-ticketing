@@ -93,20 +93,8 @@ func CreateUserAccount(ctx context.Context, data interface{}) error {
 		return err
 	}
 
-	// Marshal the user to a map of AttributeValues
-	values, err := awswrapper.DynamoDBMarshalMap(data)
-	if err != nil {
-		trail.Error("failed to marshal data to a map of AttributeValues")
-		return err
-	}
-
-	params := &dynamodb.PutItemInput{
-		Item:      values,
-		TableName: aws.String(tablename),
-	}
-
 	// Save the User information into the DynamoDB Table
-	_, err = awswrapper.DynamoDBPutItem(ctx, params)
+	err := InsertItem(ctx, tablename, data)
 	if err != nil {
 		trail.Error("failed to insert a new user")
 		return err
@@ -131,24 +119,7 @@ func UpdateUserAcccount(ctx context.Context, key map[string]types.AttributeValue
 		return user, err
 	}
 
-	// Using the update expression to create a DynamoDB Expression
-	expr, err := expression.NewBuilder().WithUpdate(update).Build()
-	if err != nil {
-		trail.Error("failed to build a DynamoDB Expression")
-		return user, err
-	}
-
-	// Use the built expression to populate the DynamoDB Update Item API
-	var params = &dynamodb.UpdateItemInput{
-		Key:                       key,
-		TableName:                 aws.String(tablename),
-		UpdateExpression:          expr.Update(),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		ReturnValues:              types.ReturnValueAllNew,
-	}
-
-	result, err := awswrapper.DynamoDBUpdateItem(ctx, params)
+	result, err := UpdateItem(ctx, tablename, key, update)
 	if err != nil {
 		trail.Error("failed to update the user account")
 		return user, err

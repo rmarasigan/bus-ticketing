@@ -43,31 +43,19 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		name_query = request.QueryStringParameters["name"]
 	)
 
-	// Check whether the request queries are present
-	if id_query == "" {
-		err := errors.New("'id' parameter is not set")
-		utility.Error(err, "APIError", "'id' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
-	if name_query == "" {
-		err := errors.New("'name' parameter is not set")
-		utility.Error(err, "APIError", "'name' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
 	// Fetch the existing bus line record/information
 	bus, err := query.GetBusLine(ctx, id_query, name_query)
 	if err != nil {
-		utility.Error(err, "DynamoDBError", "failed to fetch the bus line information/record", utility.KVP{Key: "id", Value: id_query}, utility.KVP{Key: "name", Value: name_query})
+		utility.Error(err, "DynamoDBError", "failed to fetch the bus line record", utility.KVP{Key: "id", Value: id_query},
+			utility.KVP{Key: "name", Value: name_query})
+
 		return api.StatusInternalServerError()
 	}
 
 	if bus == (schema.Bus{}) {
-		err := errors.New("the bus line information you're trying to fetch is non-existent")
-		utility.Error(err, "APIError", "the bus line does not exist", utility.KVP{Key: "id", Value: id_query}, utility.KVP{Key: "name", Value: name_query})
+		err := errors.New("the bus line you're trying to fetch is non-existent")
+		utility.Error(err, "APIError", "the bus line does not exist", utility.KVP{Key: "id", Value: id_query},
+			utility.KVP{Key: "name", Value: name_query})
 
 		return api.StatusBadRequest(err)
 	}

@@ -35,7 +35,7 @@ func GetBusLine(ctx context.Context, id, name string) (schema.Bus, error) {
 
 	// Create a names list representing the list of item attribute names
 	// to be returned.
-	var namesListt = []expression.NameBuilder{
+	var namesList = []expression.NameBuilder{
 		expression.Name("name"),
 		expression.Name("owner"),
 		expression.Name("email"),
@@ -45,7 +45,7 @@ func GetBusLine(ctx context.Context, id, name string) (schema.Bus, error) {
 	}
 
 	// SELECT id, name, owner, email, address, company, mobile_number
-	projection := expression.NamesList(expression.Name("id"), namesListt...)
+	projection := expression.NamesList(expression.Name("id"), namesList...)
 
 	// Construct the filter builder with a name and value.
 	// WHERE id = id_value
@@ -96,22 +96,10 @@ func CreateBusLine(ctx context.Context, data interface{}) error {
 		return err
 	}
 
-	// Marshal the user to a map of AttributeValeus
-	values, err := awswrapper.DynamoDBMarshalMap(data)
-	if err != nil {
-		trail.Error("failed to marshal data to a map of AttributeValues")
-		return err
-	}
-
-	params := &dynamodb.PutItemInput{
-		Item:      values,
-		TableName: aws.String(tablename),
-	}
-
 	// Save the Bus Line information into the DynamoDB Table
-	_, err = awswrapper.DynamoDBPutItem(ctx, params)
+	err := InsertItem(ctx, tablename, data)
 	if err != nil {
-		trail.Error("failed to insert a new user")
+		trail.Error("failed to insert a new bus line")
 		return err
 	}
 
@@ -134,26 +122,9 @@ func UpdateBusLine(ctx context.Context, key map[string]types.AttributeValue, upd
 		return bus, err
 	}
 
-	// Using the update expression to create a DynamoDB Expression
-	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	result, err := UpdateItem(ctx, tablename, key, update)
 	if err != nil {
-		trail.Error("failed to build a DynamoDB Expression")
-		return bus, err
-	}
-
-	// Use the built expression to populate the DynamoDB Update Item API
-	var params = &dynamodb.UpdateItemInput{
-		Key:                       key,
-		TableName:                 aws.String(tablename),
-		UpdateExpression:          expr.Update(),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		ReturnValues:              types.ReturnValueAllNew,
-	}
-
-	result, err := awswrapper.DynamoDBUpdateItem(ctx, params)
-	if err != nil {
-		trail.Error("fail to update the bus line information")
+		trail.Error("failed to update the bus line record")
 		return bus, err
 	}
 

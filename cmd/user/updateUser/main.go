@@ -57,33 +57,18 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		username_query = request.QueryStringParameters["username"]
 	)
 
-	// Check whether the request queries are present
-	if id_query == "" {
-		err := errors.New("'id' parameter is not set")
-		user.Error(err, "APIError", "'id' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
-	if username_query == "" {
-		err := errors.New("'username' parameter is not set")
-		user.Error(err, "APIError", "'username' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
 	// Unmarshal the received JSON-encoded data
 	err := utility.ParseJSON([]byte(request.Body), user)
 	if err != nil {
 		user.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
-			utility.KVP{Key: "request", Value: request.Body})
+			utility.KVP{Key: "payload", Value: request.Body})
 		return api.StatusInternalServerError()
 	}
 
 	// Fetch the existing user account record/information
 	account, err := query.GetUserAccount(ctx, id_query, username_query)
 	if err != nil {
-		user.Error(err, "DynamoDBError", "failed to fetch the user account information/record")
+		user.Error(err, "DynamoDBError", "failed to fetch the user account record")
 		return api.StatusInternalServerError()
 	}
 
@@ -110,7 +95,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 
 	result, err := query.UpdateUserAcccount(ctx, compositKey, update)
 	if err != nil {
-		account.Error(err, "DynamoDBError", "failed to update the user account information/record")
+		account.Error(err, "DynamoDBError", "failed to update the user account record")
 		return api.StatusInternalServerError()
 	}
 

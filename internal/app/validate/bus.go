@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/env"
-	awswrapper "github.com/rmarasigan/bus-ticketing/internal/aws_wrapper"
+	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
 
@@ -90,24 +88,10 @@ func IsBusLineExisting(ctx context.Context, name, company string) (bool, error) 
 	// Create a composite key expression
 	key := expression.KeyAnd(expression.Key("name").Equal(expression.Value(name)), expression.Key("company").Equal(expression.Value(company)))
 
-	// Build an expression to retrieve item from the DynamoDB
-	expr, err := expression.NewBuilder().WithKeyCondition(key).Build()
+	result, err := query.IsExisting(ctx, tablename, key)
 	if err != nil {
 		return false, err
 	}
 
-	// Build the query params parameter
-	params := &dynamodb.QueryInput{
-		TableName:                 aws.String(tablename),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.KeyCondition(),
-	}
-
-	result, err := awswrapper.DynamoDBQuery(ctx, params)
-	if err != nil {
-		return false, err
-	}
-
-	return (result.Count > 0), nil
+	return result, nil
 }

@@ -42,7 +42,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	err := utility.ParseJSON([]byte(request.Body), user)
 	if err != nil {
 		user.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
-			utility.KVP{Key: "request", Value: request.Body})
+			utility.KVP{Key: "payload", Value: request.Body})
 
 		return api.StatusInternalServerError()
 	}

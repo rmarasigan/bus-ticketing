@@ -24,7 +24,7 @@ func main() {
 // with a 200 OK HTTP Status.
 //
 // Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/bus/update?id=xxxxx&name=xxxxx
+//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/update?id=xxxxx&name=xxxxx
 //
 // Sample API Params:
 //  id=RLBSW-856996
@@ -54,26 +54,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		name_query = request.QueryStringParameters["name"]
 	)
 
-	// Check whether the request queries are present
-	if id_query == "" {
-		err := errors.New("'id' parameter is not set")
-		bus.Error(err, "APIError", "'id' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
-	if name_query == "" {
-		err := errors.New("'name' parameter is not set")
-		bus.Error(err, "APIError", "'name' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
 	// Unmarshal the received JSON-encoded data
 	err := utility.ParseJSON([]byte(request.Body), bus)
 	if err != nil {
 		bus.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
-			utility.KVP{Key: "request", Value: request.Body})
+			utility.KVP{Key: "payload", Value: request.Body})
 
 		return api.StatusInternalServerError()
 	}
@@ -81,12 +66,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	// Fetch the existing bus line record/information
 	busLine, err := query.GetBusLine(ctx, id_query, name_query)
 	if err != nil {
-		bus.Error(err, "DynamoDBError", "failed to fetch the bus line information/record")
+		bus.Error(err, "DynamoDBError", "failed to fetch the bus line record")
 		return api.StatusInternalServerError()
 	}
 
 	if busLine == (schema.Bus{}) {
-		err := errors.New("the bus line information you're trying to update is non-existent")
+		err := errors.New("the bus line record you're trying to update is non-existent")
 		bus.Error(err, "APIError", "the bus line does not exist")
 
 		return api.StatusBadRequest(err)
@@ -108,7 +93,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 
 	result, err := query.UpdateBusLine(ctx, compositeKey, update)
 	if err != nil {
-		busLine.Error(err, "DynamoDBError", "failed to update the bus line information/record")
+		busLine.Error(err, "DynamoDBError", "failed to update the bus line record")
 		return api.StatusInternalServerError()
 	}
 

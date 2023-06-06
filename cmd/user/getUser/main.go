@@ -44,25 +44,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		username_query = request.QueryStringParameters["username"]
 	)
 
-	// Check whether the request queries are present
-	if id_query == "" {
-		err := errors.New("'id' parameter is not set")
-		utility.Error(err, "APIError", "'id' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
-	if username_query == "" {
-		err := errors.New("'username' parameter is not set")
-		utility.Error(err, "APIError", "'username' is not implemented")
-
-		return api.StatusBadRequest(err)
-	}
-
 	// Fetch the existing user account record/information
 	account, err := query.GetUserAccount(ctx, id_query, username_query)
 	if err != nil {
-		utility.Error(err, "DynamoDBError", "failed to fetch the user account information/record", utility.KVP{Key: "username", Value: username_query})
+		utility.Error(err, "DynamoDBError", "failed to fetch the user account record", utility.KVP{Key: "username", Value: username_query})
 		return api.StatusInternalServerError()
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/env"
+	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	awswrapper "github.com/rmarasigan/bus-ticketing/internal/aws_wrapper"
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
@@ -129,26 +130,12 @@ func IsUsernameExisting(ctx context.Context, username string) (bool, error) {
 	// Create a key expression
 	key := expression.Key("username").Equal(expression.Value(username))
 
-	// Build an expression to retrieve item from the DynamoDB
-	expr, err := expression.NewBuilder().WithKeyCondition(key).Build()
+	result, err := query.IsExisting(ctx, tablename, key)
 	if err != nil {
 		return false, err
 	}
 
-	// Build the query params parameter
-	params := &dynamodb.QueryInput{
-		TableName:                 aws.String(tablename),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.KeyCondition(),
-	}
-
-	result, err := awswrapper.DynamoDBQuery(ctx, params)
-	if err != nil {
-		return false, err
-	}
-
-	return (result.Count > 0), nil
+	return result, nil
 }
 
 // UserAccountExists checks if the DynamoDB Table is configured on the environment, and

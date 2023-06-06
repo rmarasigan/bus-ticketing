@@ -22,58 +22,57 @@ func main() {
 // responds with a 200 OK HTTP Status.
 //
 // Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/create
+//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus_unit/create
 //
 // Sample API Payload:
 // 	{
-// 		"name": "Thunder Rail Bus Line",
-// 		"owner": "Thando Oyibo Emmett",
-// 		"company": "Rail Bus Way",
-// 		"address": "1986 Bogisich Junctions, Hamillhaven, Kansas",
-// 		"email": "thando.emmet@outlook.com",
-// 		"mobile_number": "+1-335-908-1432"
+// 		"code": "RLBSWV1_0606",
+// 		"bus_id": "RLBSW-856996",
+// 		"active": true,
+// 		"min_capacity": 40,
+// 		"max_capacity": 50
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	var bus = new(schema.Bus)
+	var unit = new(schema.BusUnit)
 
 	// Unmarshal the received JSON-encoded data
-	err := utility.ParseJSON([]byte(request.Body), bus)
+	err := utility.ParseJSON([]byte(request.Body), unit)
 	if err != nil {
-		bus.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
+		unit.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "payload", Value: request.Body})
 
 		return api.StatusBadRequest(err)
 	}
 
 	// Validate if the required fields are not empty
-	err = validate.CreateBusLine(*bus)
+	err = validate.CreateBusUnitFields(*unit)
 	if err != nil {
-		bus.Error(err, "CreateBusLine", "missing required field(s)")
+		unit.Error(err, "CreateBusUnitFields", "missing required field(s)")
 		return api.StatusBadRequest(err)
 	}
 
-	// Checks whether the bus line exist or not
-	busLineExist, err := validate.IsBusLineExisting(ctx, bus.Name, bus.Company)
+	// Checks whether the bus unit exist or not
+	busUnitExist, err := validate.IsBusUnitExisting(ctx, unit.BusID, unit.Code)
 	if err != nil {
-		bus.Error(err, "IsBusLineExisting", "failed to validate bus line if it exist")
+		unit.Error(err, "IsBusUnitExisting", "failed to validate bus unit if it exist")
 		return api.StatusInternalServerError()
 	}
 
-	// If the bus line exists, return a 400 BadRequest HTTP Status
-	if busLineExist {
-		err := fmt.Errorf("%s bus line from %s company already exist", bus.Name, bus.Company)
-		bus.Error(err, "IsBusLineExisting", "already existing bus line")
+	// If the bus unit exists, return a 400 BadRequest HTTP Status
+	if busUnitExist {
+		err := fmt.Errorf("%s bus unit from %s already exist", unit.Code, unit.BusID)
+		unit.Error(err, "IsBusUnitExisting", "already existing bus unit")
 
 		return api.StatusBadRequest(err)
 	}
 
 	// Set default values of the bus line information
-	bus.SetValues()
+	unit.SetValues()
 
-	// Inserts a new bus line record to the DynamoDB
-	err = query.CreateBusLine(ctx, bus)
+	// Inserts a new bus unit record to the DynamoDB
+	err = query.CreateBusUnit(ctx, unit)
 	if err != nil {
-		bus.Error(err, "DynamoDBError", "failed to create a new bus line record")
+		unit.Error(err, "DynamoDBError", "failed to create a new bus unit record")
 		return api.StatusInternalServerError()
 	}
 

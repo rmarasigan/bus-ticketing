@@ -3,8 +3,6 @@ package validate
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -15,75 +13,6 @@ import (
 	awswrapper "github.com/rmarasigan/bus-ticketing/internal/aws_wrapper"
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
-
-// CreateUserAccount validates if the required fields are empty or not.
-//
-// Fields that are validated:
-//  user_type, first_name, last_name, username, password, address,
-//  email, mobile_number
-func CreateUserAccount(user *schema.User) error {
-	var fields []string
-
-	if user.UserType == "" {
-		fields = append(fields, "user_type")
-	}
-
-	if user.FirstName == "" {
-		fields = append(fields, "first_name")
-	}
-
-	if user.LastName == "" {
-		fields = append(fields, "last_name")
-	}
-
-	if user.Username == "" {
-		fields = append(fields, "username")
-	}
-
-	if user.Password == "" {
-		fields = append(fields, "password")
-	}
-
-	if user.Address == "" {
-		fields = append(fields, "address")
-	}
-
-	if user.Email == "" {
-		fields = append(fields, "email")
-	}
-
-	if user.MobileNumber == "" {
-		fields = append(fields, "mobile_number")
-	}
-
-	if len(fields) > 0 {
-		return fmt.Errorf("missing %s field(s)", strings.Join(fields, ", "))
-	}
-
-	return nil
-}
-
-// LogInFields validates if the required fields are empty or not.
-//
-// Fields that are validated:
-//  username, password
-func LogInFields(user schema.User) error {
-	var fields []string
-
-	if user.Username == "" {
-		fields = append(fields, "username")
-	}
-
-	if user.Password == "" {
-		fields = append(fields, "password")
-	}
-
-	if len(fields) > 0 {
-		return fmt.Errorf("missing %s field(s)", strings.Join(fields, ", "))
-	}
-
-	return nil
-}
 
 // UpdateUserAccountFields validates if the field that are going to be updated
 // are empty or not to set its previous value.

@@ -43,3 +43,24 @@ func (unit BusUnit) Error(err error, code, message string, kv ...utility.KVP) {
 func (unit *BusUnit) SetValues() {
 	unit.DateCreated = fmt.Sprint(time.Now().Unix())
 }
+
+// FailedBusUnits represents the failed bus unit that needs to be re-processed.
+type FailedBusUnits struct {
+	Failed []struct {
+		Unit   BusUnit `json:"unit"`
+		Reason string  `json:"reason,omitempty"`
+	} `json:"failed"`
+}
+
+// SetFailedUnits sets the failed bus units information transaction by passing the
+// Bus Unit and the reason why it failed.
+func (failed *FailedBusUnits) SetFailedUnits(unit BusUnit, reason string) {
+	data := struct {
+		Unit   BusUnit `json:"unit"`
+		Reason string  `json:"reason,omitempty"`
+	}{}
+
+	data.Unit = unit
+	data.Reason = reason
+	failed.Failed = append(failed.Failed, data)
+}

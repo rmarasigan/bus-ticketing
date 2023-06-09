@@ -44,21 +44,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		user.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "payload", Value: request.Body})
 
-		return api.StatusInternalServerError()
-	}
-
-	// Validate if the required fields are not empty
-	err = validate.CreateUserAccount(user)
-	if err != nil {
-		user.Error(err, "CreateUserAccount", "missing required field(s)")
-		return api.StatusBadRequest(err)
+		return api.StatusInternalServerError(err)
 	}
 
 	// Checks whether the username exist or not
 	usernameExist, err := validate.IsUsernameExisting(ctx, user.Username)
 	if err != nil {
 		user.Error(err, "IsUsernameExisting", "failed to validate username if it exist")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	// If the username exists, return a 400 BadRequest HTTP Status
@@ -76,7 +69,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	err = query.CreateUserAccount(ctx, user)
 	if err != nil {
 		user.Error(err, "DynamoDBError", "failed to create a new account")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	return api.StatusOKWithoutBody()

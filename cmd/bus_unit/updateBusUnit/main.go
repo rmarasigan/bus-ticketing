@@ -57,14 +57,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		unit.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "payload", Value: request.Body})
 
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	// Fetch the existing bus unit record/information
 	busUnit, err := query.GetBusUnit(ctx, code_query, busId_query)
 	if err != nil {
 		unit.Error(err, "DynamoDBError", "failed to fetch the bus unit record")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	if busUnit == (schema.BusUnit{}) {
@@ -90,7 +90,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	result, err := query.UpdateBusUnit(ctx, compositeKey, update)
 	if err != nil {
 		busUnit.Error(err, "DynamoDBError", "failed to update the bus unit record")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	return api.StatusOK(result)

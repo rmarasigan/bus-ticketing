@@ -17,7 +17,7 @@ func main() {
 }
 
 // It receives the Amazon API Gateway event record data as input, validates the
-// request query, fetches the bus line record/information, and responds with a 200
+// request query, fetches the bus line record, and responds with a 200
 // OK HTTP Status.
 //
 // Endpoint:
@@ -43,13 +43,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		name_query = request.QueryStringParameters["name"]
 	)
 
-	// Fetch the existing bus line record/information
+	// Fetch the existing bus line record
 	bus, err := query.GetBusLine(ctx, id_query, name_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the bus line record", utility.KVP{Key: "id", Value: id_query},
 			utility.KVP{Key: "name", Value: name_query})
 
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	if bus == (schema.Bus{}) {

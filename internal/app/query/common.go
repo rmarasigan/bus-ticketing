@@ -87,3 +87,46 @@ func UpdateItem(ctx context.Context, tablename string, key map[string]types.Attr
 
 	return result, nil
 }
+
+// FilterItems creates an expression with ConditionBuilder, performs the DynamoDB Scan
+// operation, and returns a list of attributes of the items.
+func FilterItems(ctx context.Context, tablename string, filter expression.ConditionBuilder) (*dynamodb.ScanOutput, error) {
+	// Using the update expression to create a DynamoDB Expression
+	expr, err := expression.NewBuilder().WithCondition(filter).Build()
+	if err != nil {
+		trail.Error("failed to build DynamoDB Expression")
+		return nil, err
+	}
+
+	// Use the build expression to populate the DynamoDB Scan API
+	var params = &dynamodb.ScanInput{
+		TableName:                 aws.String(tablename),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Condition(),
+	}
+
+	result, err := awswrapper.DynamoDBScan(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// BuildMultipleORConditionExpression builds the logical OR clause of the argument ConditionBuilders.
+func BuildMultipleORConditionExpression(conditions []expression.ConditionBuilder) expression.ConditionBuilder {
+	var filter expression.ConditionBuilder
+
+	if len(conditions) == 0 {
+		return filter
+	}
+
+	filter = filter.Or(conditions[0])
+
+	for _, condition := range conditions[1:] {
+		filter = filter.Or(conditions[0], condition)
+	}
+
+	return filter
+}

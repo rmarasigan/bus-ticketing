@@ -66,3 +66,24 @@ func (bus *Bus) SetValues() {
 	bus.DateCreated = fmt.Sprint(time.Now().Unix())
 	bus.ID = fmt.Sprintf("%s-%s", bus.key(), bus.DateCreated[2:8])
 }
+
+// FailedBus represents the failed bus that needs to be re-processed.
+type FailedBus struct {
+	Failed []struct {
+		Bus    Bus    `json:"bus"`
+		Reason string `json:"reason,omitempty"`
+	} `json:"failed"`
+}
+
+// SetFailedBus sets the failed bus information transaction by passing the
+// Bus and the reason why it failed.
+func (failed *FailedBus) SetFailedBus(bus Bus, reason string) {
+	data := struct {
+		Bus    Bus    `json:"bus"`
+		Reason string `json:"reason,omitempty"`
+	}{}
+
+	data.Bus = bus
+	data.Reason = reason
+	failed.Failed = append(failed.Failed, data)
+}

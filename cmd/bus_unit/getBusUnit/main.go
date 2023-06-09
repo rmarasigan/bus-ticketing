@@ -46,7 +46,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the bus unit record/information", utility.KVP{Key: "code", Value: code_query}, utility.KVP{Key: "bus_id", Value: busId_query})
 
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	if unit == (schema.BusUnit{}) {

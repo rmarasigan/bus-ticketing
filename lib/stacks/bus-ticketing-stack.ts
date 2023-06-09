@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import { UserApiModel, UserLoginApiModel, BusLineApiModel, BusUnitApiModel } from '../definitions/bus-ticketing-api-model';
 
 export class BusTicketingStack extends cdk.Stack
 {
@@ -170,6 +171,21 @@ export class BusTicketingStack extends cdk.Stack
     BusTable.grantReadWriteData(updateBus);
     updateBus.applyRemovalPolicy(REMOVAL_POLICY);
 
+    const filterBus = new lambda.Function(this, 'filterBus', {
+      memorySize: 1024,
+      handler: 'filterBus',
+      functionName: 'filterBus',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus/filterBus'),
+      description: 'A Lambda Function that will process API requests and filte the bus line record depending on the passed query',
+      environment: {
+        "BUS_TABLE": BusTable.tableName
+      }
+    });
+    BusTable.grantReadData(filterBus);
+    filterBus.applyRemovalPolicy(REMOVAL_POLICY);
+
     // ***** Bus Unit Lambda Functions Specification ***** //
     const createBusUnit = new lambda.Function(this, 'createBusUnit', {
       memorySize: 1024,
@@ -229,6 +245,13 @@ export class BusTicketingStack extends cdk.Stack
       }
     });
     api.applyRemovalPolicy(REMOVAL_POLICY);
+    api.addGatewayResponse('BusTicketing_BadRequestGatewayResponse', {
+      statusCode: '400',
+      type: apigw.ResponseType.BAD_REQUEST_BODY,
+      templates: {
+        'application/json': `{"message": "$context.error.validationErrorString"}`
+      }
+    });
 
     const ApiParameterValidator = new apigw.RequestValidator(this, 'BusTicketing_ApiParameterValidator', {
       restApi: api,
@@ -236,17 +259,35 @@ export class BusTicketingStack extends cdk.Stack
       requestValidatorName: 'BusTicketing_ApiParameterValidator'
     });
 
+    const ApiRequestBodyValidator = new apigw.RequestValidator(this, 'BusTicketing_ApiRequestBodyValidator', {
+      restApi: api,
+      validateRequestBody: true,
+      requestValidatorName: 'BusTicketing_ApiRequestBodyValidator'
+    });
+
     // ***** User API Specification ***** //
     const UserApiRoot = api.root.addResource('user');
     const UserAccountApiRoot = UserApiRoot.addResource('account');
 
+    const UserModel = UserApiModel(api);
     const createUserApiIntegration = new apigw.LambdaIntegration(createUser);
     const createUserApi = UserApiRoot.addResource('create');
-    createUserApi.addMethod('POST', createUserApiIntegration);
+    createUserApi.addMethod('POST', createUserApiIntegration, {
+      requestModels: {
+        'application/json': UserModel
+      },
+      requestValidator: ApiRequestBodyValidator
+    });
 
+    const UserLoginModel = UserLoginApiModel(api);
     const loginUserApiIntegration = new apigw.LambdaIntegration(login);
     const loginUserApi = UserApiRoot.addResource('login');
-    loginUserApi.addMethod('POST', loginUserApiIntegration);
+    loginUserApi.addMethod('POST', loginUserApiIntegration, {
+      requestModels: {
+        'application/json': UserLoginModel
+      },
+      requestValidator: ApiRequestBodyValidator
+    });
 
     const getUserApiIntegration = new apigw.LambdaIntegration(getUser);
     const getUserApi = UserAccountApiRoot.addResource('get');
@@ -271,9 +312,15 @@ export class BusTicketingStack extends cdk.Stack
     // ***** Bus API Specification ***** //
     const BusApiRoot = api.root.addResource('bus');
 
+    const BusLineModel = BusLineApiModel(api);
     const createBusApiIntegration = new apigw.LambdaIntegration(createBus);
     const createBusApi = BusApiRoot.addResource('create');
-    createBusApi.addMethod('POST', createBusApiIntegration);
+    createBusApi.addMethod('POST', createBusApiIntegration, {
+      requestModels: {
+        'application/json': BusLineModel
+      },
+      requestValidator: ApiRequestBodyValidator
+    });
 
     const getBusApiIntegration = new apigw.LambdaIntegration(getBus);
     const getBusApi = BusApiRoot.addResource('get');
@@ -295,12 +342,27 @@ export class BusTicketingStack extends cdk.Stack
       requestValidator: ApiParameterValidator
     });
 
+    const filterBusApiIntegration = new apigw.LambdaIntegration(filterBus);
+    const filterBusApi = BusApiRoot.addResource('search');
+    filterBusApi.addMethod('GET', filterBusApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.name': true,
+        'method.request.querystring.company': true
+      }
+    });
+
     // ***** Bus Unit API Specification ***** //
     const BusUnitApiRoot = api.root.addResource('bus_unit');
 
+    const BusUnitModel = BusUnitApiModel(api);
     const createBusUnitApiIntegration = new apigw.LambdaIntegration(createBusUnit);
     const createBusUnitApi = BusUnitApiRoot.addResource('create');
-    createBusUnitApi.addMethod('POST', createBusUnitApiIntegration);
+    createBusUnitApi.addMethod('POST', createBusUnitApiIntegration, {
+      requestModels: {
+        'application/json': BusUnitModel
+      },
+      requestValidator: ApiRequestBodyValidator
+    });
 
     const getBusUnitApiIntegration = new apigw.LambdaIntegration(getBusUnit);
     const getBusUnitApi = BusUnitApiRoot.addResource('get');

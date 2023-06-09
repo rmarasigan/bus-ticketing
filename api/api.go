@@ -17,14 +17,14 @@ type Error struct {
 }
 
 // Response returns a response to be returned by the API Gateway Request.
-func Response(status int, body interface{}) (*events.APIGatewayProxyResponse, error) {
+func Response(status int, body interface{}) *events.APIGatewayProxyResponse {
 	return &events.APIGatewayProxyResponse{
 		Headers: map[string]string{
 			"Content-Type": CONTENT_TYPE,
 		},
 		StatusCode: status,
 		Body:       utility.EncodeJSON(body),
-	}, nil
+	}
 }
 
 // StatusOK returns a response of an HTTP StatusOK with body.
@@ -58,18 +58,18 @@ func StatusBadRequest(err error) (*events.APIGatewayProxyResponse, error) {
 		},
 		StatusCode: http.StatusBadRequest,
 		Body:       string(body),
-	}, nil
+	}, err
 }
 
 // StatusBadRequestWithBody returns a response of an HTTP StatusBadRequest with body.
-func StatusBadRequestWithBody(body map[string]interface{}) (*events.APIGatewayProxyResponse, error) {
+func StatusBadRequestWithBody(body map[string]interface{}, err error) (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		Headers: map[string]string{
 			"Content-Type": CONTENT_TYPE,
 		},
 		StatusCode: http.StatusBadRequest,
 		Body:       utility.EncodeJSON(body),
-	}, nil
+	}, err
 }
 
 // StatusUnhandledMethod returns a response of an HTTP StatusMethodNotAllowed and an error message of unhandled method.
@@ -84,13 +84,13 @@ func StatusUnhandledMethod() (*events.APIGatewayProxyResponse, error) {
 }
 
 // StatusInternalServerError returns a response of an HTTP StatusInternalServerError.
-func StatusInternalServerError() (*events.APIGatewayProxyResponse, error) {
+func StatusInternalServerError(err error) (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		Headers: map[string]string{
 			"Content-Type": CONTENT_TYPE,
 		},
 		StatusCode: http.StatusInternalServerError,
-	}, nil
+	}, err
 }
 
 // StatusUnhandledRequest returns a response of an HTTP StatusNotImplemented and an error message.
@@ -101,5 +101,5 @@ func StatusUnhandledRequest(err error) (*events.APIGatewayProxyResponse, error) 
 		},
 		StatusCode: http.StatusNotImplemented,
 		Body:       utility.EncodeJSON(Error{Message: err.Error()}),
-	}, nil
+	}, err
 }

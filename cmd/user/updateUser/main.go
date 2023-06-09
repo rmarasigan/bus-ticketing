@@ -62,14 +62,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	if err != nil {
 		user.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "payload", Value: request.Body})
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	// Fetch the existing user account record/information
 	account, err := query.GetUserAccount(ctx, id_query, username_query)
 	if err != nil {
 		user.Error(err, "DynamoDBError", "failed to fetch the user account record")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	if account == (schema.User{}) {
@@ -96,7 +96,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	result, err := query.UpdateUserAcccount(ctx, compositKey, update)
 	if err != nil {
 		account.Error(err, "DynamoDBError", "failed to update the user account record")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	return api.StatusOK(result)

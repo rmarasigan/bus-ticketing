@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -33,47 +34,60 @@ func main() {
 // 		"max_capacity": 50
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	var unit = new(schema.BusUnit)
+	var (
+		unitList    []schema.BusUnit
+		failedUnits schema.FailedBusUnits
+	)
 
 	// Unmarshal the received JSON-encoded data
-	err := utility.ParseJSON([]byte(request.Body), unit)
+	err := utility.ParseJSON([]byte(request.Body), &unitList)
 	if err != nil {
-		unit.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
-			utility.KVP{Key: "payload", Value: request.Body})
+		utility.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
+			utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus Unit"}, utility.KVP{Key: "payload", Value: request.Body})
 
 		return api.StatusBadRequest(err)
 	}
 
-	// Validate if the required fields are not empty
-	err = validate.CreateBusUnitFields(*unit)
-	if err != nil {
-		unit.Error(err, "CreateBusUnitFields", "missing required field(s)")
-		return api.StatusBadRequest(err)
+	for _, unit := range unitList {
+		if unit.MaxCapacity < unit.MinCapacity {
+			err := fmt.Errorf("cannot set %v as the max capacity that is lower than the min capacity", unit.MaxCapacity)
+
+			failedUnits.SetFailedUnits(unit, err.Error())
+			unit.Error(err, "InvalidBusCapacity", "max_capacity is invalid")
+
+			continue
+		}
+
+		// Checks whether the bus unit exist or not
+		busUnitExist, err := validate.IsBusUnitExisting(ctx, unit.BusID, unit.Code)
+		if err != nil {
+			failedUnits.SetFailedUnits(unit, "failed to validate bus unit if it exist")
+			unit.Error(err, "IsBusUnitExisting", "failed to validate bus unit if it exist")
+
+			continue
+		}
+
+		// If the bus unit exists, continue to the next item
+		if busUnitExist {
+			utility.Info("BusUnitExisting", "already existing bus unit", utility.KVP{Key: "unit", Value: unit})
+			continue
+		}
+
+		// Set default values of the bus line information
+		unit.SetValues()
+
+		// Inserts a new bus unit record to the DynamoDB
+		err = query.CreateBusUnit(ctx, unit)
+		if err != nil {
+			failedUnits.SetFailedUnits(unit, "failed to create a new bus unit record")
+			unit.Error(err, "DynamoDBError", "failed to create a new bus unit record")
+
+			continue
+		}
 	}
 
-	// Checks whether the bus unit exist or not
-	busUnitExist, err := validate.IsBusUnitExisting(ctx, unit.BusID, unit.Code)
-	if err != nil {
-		unit.Error(err, "IsBusUnitExisting", "failed to validate bus unit if it exist")
-		return api.StatusInternalServerError()
-	}
-
-	// If the bus unit exists, return a 400 BadRequest HTTP Status
-	if busUnitExist {
-		err := fmt.Errorf("%s bus unit from %s already exist", unit.Code, unit.BusID)
-		unit.Error(err, "IsBusUnitExisting", "already existing bus unit")
-
-		return api.StatusBadRequest(err)
-	}
-
-	// Set default values of the bus line information
-	unit.SetValues()
-
-	// Inserts a new bus unit record to the DynamoDB
-	err = query.CreateBusUnit(ctx, unit)
-	if err != nil {
-		unit.Error(err, "DynamoDBError", "failed to create a new bus unit record")
-		return api.StatusInternalServerError()
+	if len(failedUnits.Failed) > 0 {
+		return api.Response(http.StatusBadRequest, failedUnits), nil
 	}
 
 	return api.StatusOKWithoutBody()

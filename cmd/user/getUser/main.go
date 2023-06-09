@@ -48,7 +48,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	account, err := query.GetUserAccount(ctx, id_query, username_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the user account record", utility.KVP{Key: "username", Value: username_query})
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	if account == (schema.User{}) {

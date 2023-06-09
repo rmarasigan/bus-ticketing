@@ -137,3 +137,51 @@ func UpdateBusLine(ctx context.Context, key map[string]types.AttributeValue, upd
 
 	return bus, nil
 }
+
+// FilterBusLine checks if the DynamoDB Table is configured on the environment,
+// fetches and returns a list of bus line information.
+func FilterBusLine(ctx context.Context, name, company string) ([]schema.Bus, error) {
+	var (
+		busList   []schema.Bus
+		tablename = env.BUS_TABLE
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BUS_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BUS_TABLE environment variable is not set")
+
+		return busList, err
+	}
+
+	// Construct the filter builder with a name that contains a specified value.
+	// WHERE name LIKE %name_value% OR company LIKE or %company_value%
+	var filter expression.ConditionBuilder
+	if name != "" && company != "" {
+		filter = expression.Name("name").Contains(name).Or(expression.Name("company").Contains(company))
+	} else {
+		if name != "" {
+			filter = expression.Name("name").Contains(name)
+		}
+
+		if company != "" {
+			filter = expression.Name("company").Contains(company)
+		}
+	}
+
+	result, err := FilterItems(ctx, tablename, filter)
+	if err != nil {
+		return busList, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual bus struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&busList, result.Items)
+		if err != nil {
+			return busList, err
+		}
+	}
+
+	return busList, nil
+}

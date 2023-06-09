@@ -53,21 +53,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		user.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "payload", Value: request.Body})
 
-		return api.StatusInternalServerError()
-	}
-
-	// Validate if the required fields are not empty
-	err = validate.LogInFields(*user)
-	if err != nil {
-		user.Error(err, "LogInFields", "failed to login the user account")
-		return api.StatusBadRequest(err)
+		return api.StatusInternalServerError(err)
 	}
 
 	// Checks whether the user credentials are valid or not
 	existing, account, err := validate.UserAccountExists(ctx, user.Username, user.Password)
 	if err != nil {
 		user.Error(err, "UserAccountExists", "failed to validate user account credentials")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	// If the user account does not exist, return a 400 BadRequest HTTP Status
@@ -92,7 +85,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	_, err = query.UpdateUserAcccount(ctx, compositKey, update)
 	if err != nil {
 		account.Error(err, "DynamoDBError", "failed to update the user last login")
-		return api.StatusInternalServerError()
+		return api.StatusInternalServerError(err)
 	}
 
 	return api.StatusOK(account)

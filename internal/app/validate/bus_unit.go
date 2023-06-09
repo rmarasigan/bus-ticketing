@@ -3,8 +3,6 @@ package validate
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/rmarasigan/bus-ticketing/api/schema"
@@ -12,56 +10,6 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
-
-// CreateBusUnitFields validates if the required fields are empty or not.
-//
-// Fields that are validated:
-//  bus_id, code, active, min_capacity, max_capacity
-func CreateBusUnitFields(unit schema.BusUnit) error {
-	var fields []string
-	var invalidMaxCapacity string
-
-	if unit.BusID == "" {
-		fields = append(fields, "bus_id")
-	}
-
-	if unit.Code == "" {
-		fields = append(fields, "code")
-	}
-
-	if unit.Active == nil {
-		fields = append(fields, "active")
-	}
-
-	if unit.MinCapacity == 0 {
-		fields = append(fields, "min_capacity")
-	}
-
-	if unit.MaxCapacity == 0 {
-		fields = append(fields, "max_capacity")
-	}
-
-	if unit.MaxCapacity < unit.MinCapacity {
-		invalidMaxCapacity = fmt.Sprintf("cannot set %v as the max capacity that is lower than the min capacity", unit.MaxCapacity)
-	}
-
-	if len(fields) > 0 {
-		err := fmt.Sprintf("missing %s field(s)", strings.Join(fields, ", "))
-
-		if invalidMaxCapacity != "" {
-			return fmt.Errorf("%s and %s", err, invalidMaxCapacity)
-		}
-
-		return errors.New(err)
-
-	} else {
-		if invalidMaxCapacity != "" {
-			return errors.New(invalidMaxCapacity)
-		}
-	}
-
-	return nil
-}
 
 // UpdateBusUnitFields validates if the field that are going to be updated
 // are empty or not to set its previous value.

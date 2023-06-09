@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -34,47 +34,51 @@ func main() {
 // 		"mobile_number": "+1-335-908-1432"
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	var bus = new(schema.Bus)
+	var (
+		busList   []schema.Bus
+		failedBus schema.FailedBus
+	)
 
 	// Unmarshal the received JSON-encoded data
-	err := utility.ParseJSON([]byte(request.Body), bus)
+	err := utility.ParseJSON([]byte(request.Body), &busList)
 	if err != nil {
-		bus.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
-			utility.KVP{Key: "payload", Value: request.Body})
+		utility.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
+			utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus"}, utility.KVP{Key: "payload", Value: request.Body})
 
 		return api.StatusBadRequest(err)
 	}
 
-	// Validate if the required fields are not empty
-	err = validate.CreateBusLine(*bus)
-	if err != nil {
-		bus.Error(err, "CreateBusLine", "missing required field(s)")
-		return api.StatusBadRequest(err)
+	for _, bus := range busList {
+		// Checks whether the bus line exist or not
+		busLineExist, err := validate.IsBusLineExisting(ctx, bus.Name, bus.Company)
+		if err != nil {
+			failedBus.SetFailedBus(bus, "failed to validate bus line if it exist")
+			bus.Error(err, "IsBusLineExisting", "failed to validate bus line if it exist")
+
+			continue
+		}
+
+		// If the bus line exists, continue to the next item
+		if busLineExist {
+			utility.Info("BusLineExisting", "already existing bus line", utility.KVP{Key: "bus", Value: bus})
+			continue
+		}
+
+		// Set default values of the bus line information
+		bus.SetValues()
+
+		// Inserts a new bus line record to the DynamoDB
+		err = query.CreateBusLine(ctx, bus)
+		if err != nil {
+			failedBus.SetFailedBus(bus, "failed to create a new bus line record")
+			bus.Error(err, "DynamoDBError", "failed to create a new bus line record")
+
+			continue
+		}
 	}
 
-	// Checks whether the bus line exist or not
-	busLineExist, err := validate.IsBusLineExisting(ctx, bus.Name, bus.Company)
-	if err != nil {
-		bus.Error(err, "IsBusLineExisting", "failed to validate bus line if it exist")
-		return api.StatusInternalServerError()
-	}
-
-	// If the bus line exists, return a 400 BadRequest HTTP Status
-	if busLineExist {
-		err := fmt.Errorf("%s bus line from %s company already exist", bus.Name, bus.Company)
-		bus.Error(err, "IsBusLineExisting", "already existing bus line")
-
-		return api.StatusBadRequest(err)
-	}
-
-	// Set default values of the bus line information
-	bus.SetValues()
-
-	// Inserts a new bus line record to the DynamoDB
-	err = query.CreateBusLine(ctx, bus)
-	if err != nil {
-		bus.Error(err, "DynamoDBError", "failed to create a new bus line record")
-		return api.StatusInternalServerError()
+	if len(failedBus.Failed) > 0 {
+		return api.Response(http.StatusBadRequest, failedBus), nil
 	}
 
 	return api.StatusOKWithoutBody()

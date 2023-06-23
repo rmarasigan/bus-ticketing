@@ -99,8 +99,8 @@ export function UserLoginApiModel(api: apigw.RestApi) {
  * @param api REST API that this model is part of.
 **/
 export function BusLineApiModel(api: apigw.RestApi) {
-  return api.addModel('BusTicketinBusLineModel', {
-    modelName: 'BusTicketinBusLineModel',
+  return api.addModel('BusTicketingBusLineModel', {
+    modelName: 'BusTicketingBusLineModel',
     description: 'A Bus Schema that will be validated before it goes to the Lambda Function',
     schema: {
       minItems: 1,
@@ -148,8 +148,8 @@ export function BusLineApiModel(api: apigw.RestApi) {
  * @param api REST API that this model is part of.
 **/
 export function BusUnitApiModel(api: apigw.RestApi) {
-  return api.addModel('BusTicketinBusUnitModel', {
-    modelName: 'BusTicketinBusUnitModel',
+  return api.addModel('BusTicketingBusUnitModel', {
+    modelName: 'BusTicketingBusUnitModel',
      description: 'A Bus Unit Schema that will be validated before it goes to the Lambda Function',
      schema: {
       minItems: 1,
@@ -166,7 +166,6 @@ export function BusUnitApiModel(api: apigw.RestApi) {
             type: apigw.JsonSchemaType.STRING
           },
           active: {
-            pattern: '^.+',
             type: apigw.JsonSchemaType.BOOLEAN
           },
           min_capacity: {

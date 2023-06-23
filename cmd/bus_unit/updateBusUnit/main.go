@@ -74,6 +74,18 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return api.StatusBadRequest(err)
 	}
 
+	err = unit.ValidateMinimumCapacity()
+	if err != nil {
+		unit.Error(err, "APIError", "the minimum capacity is less than the required capacity (25)")
+		return api.StatusBadRequest(err)
+	}
+
+	err = unit.ValidateMaximumCapacity(*busUnit.MinCapacity)
+	if err != nil {
+		unit.Error(err, "APIError", "the max capacity is less than the minimum capacity")
+		return api.StatusBadRequest(err)
+	}
+
 	// Create a composite key that has both the partition/primary key
 	// and the sort key of the item.
 	var compositeKey = map[string]types.AttributeValue{
@@ -85,7 +97,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	busUnit = validate.UpdateBusUnitFields(*unit, busUnit)
 	var update = expression.Set(expression.Name("active"), expression.Value(busUnit.Active)).
 		Set(expression.Name("min_capacity"), expression.Value(busUnit.MinCapacity)).
-		Set(expression.Name("max_capactiy"), expression.Value(busUnit.MaxCapacity))
+		Set(expression.Name("max_capacity"), expression.Value(busUnit.MaxCapacity))
 
 	result, err := query.UpdateBusUnit(ctx, compositeKey, update)
 	if err != nil {

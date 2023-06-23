@@ -21,11 +21,11 @@ func UpdateBusUnitFields(unit, old schema.BusUnit) schema.BusUnit {
 		unit.Active = old.Active
 	}
 
-	if unit.MinCapacity == 0 {
+	if unit.MinCapacity == nil {
 		unit.MinCapacity = old.MinCapacity
 	}
 
-	if unit.MaxCapacity == 0 || unit.MaxCapacity < unit.MinCapacity {
+	if unit.MaxCapacity == nil || *unit.MaxCapacity < *unit.MinCapacity {
 		unit.MaxCapacity = old.MaxCapacity
 	}
 

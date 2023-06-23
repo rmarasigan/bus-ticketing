@@ -130,3 +130,56 @@ func UpdateBusUnit(ctx context.Context, key map[string]types.AttributeValue, upd
 
 	return unit, nil
 }
+
+// FilterBusUnit checks if the DynamoDB Table is configured on the environment,
+// fetches and returns a list of bus unit information.
+func FilterBusUnit(ctx context.Context, code, busId string, active *bool) ([]schema.BusUnit, error) {
+	var (
+		unitList  []schema.BusUnit
+		tablename = env.BUS_UNIT
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BUS_UNIT_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BUS_UNIT_TABLE environment variable is not set")
+
+		return unitList, err
+	}
+
+	// Construct the filter builder with a name that contains a specified value.
+	var (
+		filter          expression.ConditionBuilder
+		busIdExpression = expression.Name("bus_id").Equal(expression.Value(busId))
+	)
+
+	switch {
+	case code != "":
+		filter = busIdExpression.And(expression.Name("code").Equal(expression.Value(code)))
+
+	case active != nil:
+		filter = busIdExpression.And(expression.Name("active").Equal(expression.Value(active)))
+
+	case code != "" && active != nil:
+		filter = busIdExpression.And(expression.Name("active").Equal(expression.Value(active)), expression.Name("code").Equal(expression.Value(code)))
+
+	default:
+		filter = busIdExpression
+	}
+
+	result, err := FilterItems(ctx, tablename, filter)
+	if err != nil {
+		return unitList, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual bus unit struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&unitList, result.Items)
+		if err != nil {
+			return unitList, err
+		}
+	}
+
+	return unitList, nil
+}

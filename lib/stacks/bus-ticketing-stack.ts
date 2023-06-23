@@ -178,7 +178,7 @@ export class BusTicketingStack extends cdk.Stack
       runtime: lambda.Runtime.GO_1_X,
       timeout: cdk.Duration.seconds(60),
       code: lambda.Code.fromAsset('cmd/bus/filterBus'),
-      description: 'A Lambda Function that will process API requests and filte the bus line record depending on the passed query',
+      description: 'A Lambda Function that will process API requests and filter the bus line record depending on the passed query',
       environment: {
         "BUS_TABLE": BusTable.tableName
       }
@@ -231,6 +231,21 @@ export class BusTicketingStack extends cdk.Stack
     });
     BusUnitTable.grantReadWriteData(updateBusUnit);
     updateBusUnit.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const filterBusUnit = new lambda.Function(this, 'filterBusUnit', {
+      memorySize: 1024,
+      handler: 'filterBusUnit',
+      functionName: 'filterBusUnit',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus_unit/filterBusUnit'),
+      description: 'A Lambda Function that will process API requests and filter the bus unit record depending on the passed query',
+      environment: {
+        "BUS_UNIT_TABLE": BusUnitTable.tableName
+      }
+    });
+    BusUnitTable.grantReadData(filterBusUnit);
+    filterBusUnit.applyRemovalPolicy(REMOVAL_POLICY);
 
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
@@ -379,6 +394,15 @@ export class BusTicketingStack extends cdk.Stack
     updateBusUnitApi.addMethod('POST', updateBusUnitApiIntegration, {
       requestParameters: {
         'method.request.querystring.code': true,
+        'method.request.querystring.bus_id': true
+      },
+      requestValidator: ApiParameterValidator
+    });
+
+    const filterBusUnitApiIntegration = new apigw.LambdaIntegration(filterBusUnit);
+    const filterBusUnitApi = BusUnitApiRoot.addResource('search');
+    filterBusUnitApi.addMethod('GET', filterBusUnitApiIntegration, {
+      requestParameters: {
         'method.request.querystring.bus_id': true
       },
       requestValidator: ApiParameterValidator

@@ -113,20 +113,3 @@ func FilterItems(ctx context.Context, tablename string, filter expression.Condit
 
 	return result, nil
 }
-
-// BuildMultipleORConditionExpression builds the logical OR clause of the argument ConditionBuilders.
-func BuildMultipleORConditionExpression(conditions []expression.ConditionBuilder) expression.ConditionBuilder {
-	var filter expression.ConditionBuilder
-
-	if len(conditions) == 0 {
-		return filter
-	}
-
-	filter = filter.Or(conditions[0])
-
-	for _, condition := range conditions[1:] {
-		filter = filter.Or(conditions[0], condition)
-	}
-
-	return filter
-}

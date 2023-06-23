@@ -7,6 +7,8 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/utility"
 )
 
+const BUS_UNIT_MIN_CAPACITY = 25
+
 // BusUnit represents a bus company's active bus unit and the specific
 // unit's capacity. The "Active" is set to a boolean pointer for us to
 // validate if it is set by checking if the value is "nil" since it will
@@ -20,8 +22,8 @@ type BusUnit struct {
 	BusID       string `json:"bus_id" dynamodbav:"bus_id"`                                     // The Bus ID as the sort key
 	Code        string `json:"code" dynamodbav:"code"`                                         // Code is a uniqe identification of a bus unit
 	Active      *bool  `json:"active" dynamodbav:"active"`                                     // Whether the bus unit is on trip and accepts a true or false value
-	MinCapacity int    `json:"min_capacity" dynamodbav:"min_capacity"`                         // The minimum number of passenger of a bus unit
-	MaxCapacity int    `json:"max_capacity" dynamodbav:"max_capacity"`                         // The maximum number of passenger of a bus unit
+	MinCapacity *int   `json:"min_capacity" dynamodbav:"min_capacity"`                         // The minimum number of passenger of a bus unit
+	MaxCapacity *int   `json:"max_capacity" dynamodbav:"max_capacity"`                         // The maximum number of passenger of a bus unit
 	DateCreated string `json:"date_created,omitempty" dynamodbav:"date_created,omitemptyelem"` // The date it was created as unix epoch time
 }
 
@@ -42,6 +44,28 @@ func (unit BusUnit) Error(err error, code, message string, kv ...utility.KVP) {
 //		date_created: 1658837116
 func (unit *BusUnit) SetValues() {
 	unit.DateCreated = fmt.Sprint(time.Now().Unix())
+}
+
+// ValidateMinimumCapacity validates if the amount set for the minimum
+// capacity is not a negative amount or less than the minimum capacity
+// requirement of the Bus Unit.
+func (unit BusUnit) ValidateMinimumCapacity() error {
+	if unit.MinCapacity != nil && *unit.MinCapacity < BUS_UNIT_MIN_CAPACITY {
+		return fmt.Errorf("cannot set %v as the minimum capacity", *unit.MinCapacity)
+	}
+
+	return nil
+}
+
+// ValidateMaximumCapacity validates if the amount set for the maximum
+// capacity is not a negative amount or less than the existing minimum
+// capacity.
+func (unit BusUnit) ValidateMaximumCapacity(min_capacity int) error {
+	if unit.MaxCapacity != nil && *unit.MaxCapacity < min_capacity {
+		return fmt.Errorf("cannot set %v as the max capacity that is lower than the minimum capacity", *unit.MaxCapacity)
+	}
+
+	return nil
 }
 
 // FailedBusUnits represents the failed bus unit that needs to be re-processed.

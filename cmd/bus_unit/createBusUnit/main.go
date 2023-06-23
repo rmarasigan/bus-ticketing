@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -49,9 +48,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	for _, unit := range unitList {
-		if unit.MaxCapacity < unit.MinCapacity {
-			err := fmt.Errorf("cannot set %v as the max capacity that is lower than the min capacity", unit.MaxCapacity)
-
+		err = unit.ValidateMaximumCapacity(*unit.MinCapacity)
+		if err != nil {
 			failedUnits.SetFailedUnits(unit, err.Error())
 			unit.Error(err, "InvalidBusCapacity", "max_capacity is invalid")
 

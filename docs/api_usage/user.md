@@ -109,14 +109,10 @@ The User API Schema contains the user account information. In this module, it wi
   </tr>
   <tr>
     <td>
-      <code>
-        Content-Type
-      </code>
+      <code>Content-Type</code>
     </td>
     <td>
-      <code>
-        application/json
-      </code>
+      <code>application/json</code>
     </td>
   </tr>
 </table>

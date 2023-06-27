@@ -34,7 +34,7 @@ The Bus API Schema contains the bus information. In this module, it will let you
     </td>
     <td>string</td>
     <td>
-      The name of bus company owner.
+      The name of the bus company owner.
     </td>
   </tr>
   <tr>
@@ -86,14 +86,10 @@ The Bus API Schema contains the bus information. In this module, it will let you
   </tr>
   <tr>
     <td>
-      <code>
-        Content-Type
-      </code>
+      <code>Content-Type</code>
     </td>
     <td>
-      <code>
-        application/json
-      </code>
+      <code>application/json</code>
     </td>
   </tr>
 </table>
@@ -148,7 +144,7 @@ To create a new bus instance, you must initialize an array of objects representi
       <code>owner</code>
     </td>
     <td>string</td>
-    <td>The name of bus company owner.</td>
+    <td>The name of the bus company owner.</td>
     <td>✅</td>
   </tr>
    <tr>
@@ -208,7 +204,7 @@ To create a new bus instance, you must initialize an array of objects representi
 ```
 
 ### Get Bus Information
-When retrieving the bus information, the `id` and `name` query parameters must be present in the URL. These parameters identify which bus information should be returned. It will return a representation of a specific bus information.
+When retrieving the bus information, the `id` and `name` query parameters must be present in the URL. These parameters identify which bus information should be returned. It will return a representation of specific bus information.
 
 **Method**: `GET`
 
@@ -358,7 +354,7 @@ When modifiying the bus record, the `id` and `name` query parameters must be pre
       <code>owner</code>
     </td>
     <td>string</td>
-    <td>The name of bus company owner.</td>
+    <td>The name of the bus company owner.</td>
     <td>❌</td>
   </tr>
   <tr>

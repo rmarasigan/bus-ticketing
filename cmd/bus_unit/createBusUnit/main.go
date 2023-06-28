@@ -22,7 +22,7 @@ func main() {
 // responds with a 200 OK HTTP Status.
 //
 // Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus_unit/create
+//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/create
 //
 // Sample API Payload:
 // 	{

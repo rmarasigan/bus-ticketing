@@ -24,7 +24,7 @@ func main() {
 // OK HTTP Status.
 //
 // Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus_unit/update?code=xxxxx&bus_id=xxxxx
+//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/update?code=xxxxx&bus_id=xxxxx
 //
 // Sample API Params:
 //  bus_id=RLBSW-856996
@@ -60,7 +60,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return api.StatusInternalServerError(err)
 	}
 
-	// Fetch the existing bus unit record/information
+	// Fetch the existing bus unit record
 	busUnit, err := query.GetBusUnit(ctx, code_query, busId_query)
 	if err != nil {
 		unit.Error(err, "DynamoDBError", "failed to fetch the bus unit record")

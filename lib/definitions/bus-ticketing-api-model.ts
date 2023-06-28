@@ -182,3 +182,59 @@ export function BusUnitApiModel(api: apigw.RestApi) {
      }
   });
 }
+
+/**
+ * Represents the data structure of the creation of *Bus Route* payload and
+ * accepts an object with the following fields and are validated:
+ * 
+ * `bus_id`, `bus_unit_id`, `currency_code`, `rate`, `available`, `departure_time`
+ * `arrival_time`, `from_route`, `to_route`
+ *
+ * @param api REST API that this model is part of.
+**/
+export function BusRouteApiModel(api: apigw.RestApi) {
+  return api.addModel('BusTickingBusRouteApiModel', {
+    modelName: 'BusTickingBusRouteApiModel',
+    schema: {
+      type: apigw.JsonSchemaType.OBJECT,
+      properties: {
+        bus_id: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        bus_unit_id: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        currency_code: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        rate: {
+          minimum: 1,
+          type: apigw.JsonSchemaType.NUMBER
+        },
+        available: {
+          type: apigw.JsonSchemaType.BOOLEAN
+        },
+        departure_time: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        arrival_time: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        from_route: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        to_route: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        }
+      },
+      required: [ 'bus_id', 'bus_unit_id', 'currency_code', 'rate', 'available', 'departure_time', 'arrival_time', 'from_route', 'to_route' ]
+    }
+  });
+}

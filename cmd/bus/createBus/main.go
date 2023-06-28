@@ -25,14 +25,24 @@ func main() {
 //  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/create
 //
 // Sample API Payload:
-// 	{
-// 		"name": "Thunder Rail Bus Line",
-// 		"owner": "Thando Oyibo Emmett",
-// 		"company": "Rail Bus Way",
-// 		"address": "1986 Bogisich Junctions, Hamillhaven, Kansas",
-// 		"email": "thando.emmet@outlook.com",
-// 		"mobile_number": "+1-335-908-1432"
-// 	}
+// 	[
+// 	  {
+// 	    "name": "Blue Horizon",
+// 	    "owner": "John Doe",
+// 	    "email": "john.doe@example.com",
+// 	    "address": "123 Main Street, City",
+// 	    "company": "ABC Bus Company",
+// 	    "mobile_number": "123-456-7890"
+// 	  },
+// 	  {
+// 	    "name": "Green Wave",
+// 	    "owner": "Jane Smith",
+// 	    "email": "jane.smith@example.com",
+// 	    "address": "456 Elm Avenue, Town",
+// 	    "company": "XYZ Bus Services",
+// 	    "mobile_number": "987-654-3210"
+// 	  }
+// 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		busList   []schema.Bus
@@ -45,7 +55,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		utility.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus"}, utility.KVP{Key: "payload", Value: request.Body})
 
-		return api.StatusBadRequest(err)
+		return api.StatusInternalServerError(err)
 	}
 
 	for _, bus := range busList {

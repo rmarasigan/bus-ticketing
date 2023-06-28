@@ -91,7 +91,7 @@ func CreateBusLine(ctx context.Context, data interface{}) error {
 	// Check if the DynamoDB Table is configured
 	if tablename == "" {
 		trail.Error("dynamodb BUS_TABLE is not configured on the environment")
-		err := errors.New("dynamodb BUS_TABLE environment variable is not set ")
+		err := errors.New("dynamodb BUS_TABLE environment variable is not set")
 
 		return err
 	}

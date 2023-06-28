@@ -12,8 +12,9 @@ const (
 	CONTENT_TYPE = "application/json"
 )
 
-type Error struct {
-	Message string `json:"error_msg,omitempty"`
+type Message struct {
+	Custom string `json:"message,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 // Response returns a response to be returned by the API Gateway Request.
@@ -50,7 +51,7 @@ func StatusOKWithoutBody() (*events.APIGatewayProxyResponse, error) {
 
 // StatusBadRequest returns a response of an HTTP StatusBadRequest and an error message.
 func StatusBadRequest(err error) (*events.APIGatewayProxyResponse, error) {
-	body := utility.EncodeJSON(Error{Message: err.Error()})
+	body := utility.EncodeJSON(Message{Error: err.Error()})
 
 	return &events.APIGatewayProxyResponse{
 		Headers: map[string]string{
@@ -79,7 +80,7 @@ func StatusUnhandledMethod() (*events.APIGatewayProxyResponse, error) {
 			"Content-Type": CONTENT_TYPE,
 		},
 		StatusCode: http.StatusMethodNotAllowed,
-		Body:       utility.EncodeJSON(Error{Message: errors.New("unhandled method").Error()}),
+		Body:       utility.EncodeJSON(Message{Error: errors.New("unhandled method").Error()}),
 	}, nil
 }
 
@@ -100,6 +101,6 @@ func StatusUnhandledRequest(err error) (*events.APIGatewayProxyResponse, error) 
 			"Content-Type": CONTENT_TYPE,
 		},
 		StatusCode: http.StatusNotImplemented,
-		Body:       utility.EncodeJSON(Error{Message: err.Error()}),
+		Body:       utility.EncodeJSON(Message{Error: err.Error()}),
 	}, err
 }

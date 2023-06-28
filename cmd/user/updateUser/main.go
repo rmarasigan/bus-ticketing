@@ -65,7 +65,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return api.StatusInternalServerError(err)
 	}
 
-	// Fetch the existing user account record/information
+	// Fetch the existing user account record
 	account, err := query.GetUserAccount(ctx, id_query, username_query)
 	if err != nil {
 		user.Error(err, "DynamoDBError", "failed to fetch the user account record")

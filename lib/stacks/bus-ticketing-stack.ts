@@ -3,7 +3,7 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
-import { UserApiModel, UserLoginApiModel, BusLineApiModel, BusUnitApiModel } from '../definitions/bus-ticketing-api-model';
+import { UserApiModel, UserLoginApiModel, BusLineApiModel, BusUnitApiModel, BusRouteApiModel } from '../definitions/bus-ticketing-api-model';
 
 export class BusTicketingStack extends cdk.Stack
 {
@@ -15,7 +15,7 @@ export class BusTicketingStack extends cdk.Stack
     const REMOVAL_POLICY = cdk.RemovalPolicy.DESTROY;
 
     // ******************** DynamoDB ******************** //
-    // 1. Create a DynamoDB Table that will contain the basic user record/information
+    // 1. Create a DynamoDB Table that will contain the basic user record
     // that has a partition and sort key.
     const UsersTable = new dynamodb.Table(this, 'BusTicketing_UsersTable', {
       tableName: 'BusTicketing_UsersTable',
@@ -61,6 +61,20 @@ export class BusTicketingStack extends cdk.Stack
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: REMOVAL_POLICY
+    });
+
+    // 4. Create a DynamoDB Table that will contain the Bus Route information that has a
+    // partition and sort key.
+    const BusRouteTable = new dynamodb.Table(this, 'BusTicketing_BusRouteTable', {
+      tableName: 'BusTicketing_BusRouteTable',
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: "bus_id",
+        type: dynamodb.AttributeType.STRING
+      }
     });
 
     // ******************** Lambda Functions ******************** //
@@ -247,6 +261,37 @@ export class BusTicketingStack extends cdk.Stack
     BusUnitTable.grantReadData(filterBusUnit);
     filterBusUnit.applyRemovalPolicy(REMOVAL_POLICY);
 
+    // ***** Bus Route Lambda Functions Specification ***** //
+    const createBusRoute = new lambda.Function(this, 'createBusRoute', {
+      memorySize: 1024,
+      handler: 'createBusRoute',
+      functionName: 'createBusRoute',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus_route/createBusRoute'),
+      description: 'A Lambda Function that will process API requests and create a new bus route record',
+      environment: {
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName
+      }
+    });
+    BusRouteTable.grantReadWriteData(createBusRoute);
+    createBusRoute.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const getBusRoute = new lambda.Function(this, 'getBusRoute', {
+      memorySize: 1024,
+      handler: 'getBusRoute',
+      functionName: 'getBusRoute',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus_route/getBusRoute'),
+      description: 'A Lambda Function that will process API requests and fetch the bus unit route record',
+      environment: {
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName
+      }
+    });
+    BusRouteTable.grantReadData(getBusRoute);
+    getBusRoute.applyRemovalPolicy(REMOVAL_POLICY);
+
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
       deploy: true,
@@ -282,7 +327,10 @@ export class BusTicketingStack extends cdk.Stack
 
     // ***** User API Specification ***** //
     const UserApiRoot = api.root.addResource('user');
+    UserApiRoot.applyRemovalPolicy(REMOVAL_POLICY);
+
     const UserAccountApiRoot = UserApiRoot.addResource('account');
+    UserAccountApiRoot.applyRemovalPolicy(REMOVAL_POLICY);
 
     const UserModel = UserApiModel(api);
     const createUserApiIntegration = new apigw.LambdaIntegration(createUser);
@@ -326,6 +374,7 @@ export class BusTicketingStack extends cdk.Stack
 
     // ***** Bus API Specification ***** //
     const BusApiRoot = api.root.addResource('bus');
+    BusApiRoot.applyRemovalPolicy(REMOVAL_POLICY);
 
     const BusLineModel = BusLineApiModel(api);
     const createBusApiIntegration = new apigw.LambdaIntegration(createBus);
@@ -367,7 +416,8 @@ export class BusTicketingStack extends cdk.Stack
     });
 
     // ***** Bus Unit API Specification ***** //
-    const BusUnitApiRoot = api.root.addResource('bus_unit');
+    const BusUnitApiRoot = api.root.addResource('bus-unit');
+    BusUnitApiRoot.applyRemovalPolicy(REMOVAL_POLICY);
 
     const BusUnitModel = BusUnitApiModel(api);
     const createBusUnitApiIntegration = new apigw.LambdaIntegration(createBusUnit);
@@ -403,6 +453,30 @@ export class BusTicketingStack extends cdk.Stack
     const filterBusUnitApi = BusUnitApiRoot.addResource('search');
     filterBusUnitApi.addMethod('GET', filterBusUnitApiIntegration, {
       requestParameters: {
+        'method.request.querystring.bus_id': true
+      },
+      requestValidator: ApiParameterValidator
+    });
+
+    // ***** Bus Route API Specification ***** //
+    const BusRouteApiRoot = api.root.addResource('bus-route');
+    BusRouteApiRoot.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const BusRouteModel = BusRouteApiModel(api);
+    const createBusRouteApiIntegration = new apigw.LambdaIntegration(createBusRoute);
+    const createBusRouteApi = BusRouteApiRoot.addResource('create');
+    createBusRouteApi.addMethod('POST', createBusRouteApiIntegration, {
+      requestModels: {
+        'application/json': BusRouteModel
+      },
+      requestValidator: ApiRequestBodyValidator
+    });
+
+    const getBusRouteApiIntegration = new apigw.LambdaIntegration(getBusRoute);
+    const getBusRouteApi = BusRouteApiRoot.addResource('get');
+    getBusRouteApi.addMethod('GET', getBusRouteApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.id': true,
         'method.request.querystring.bus_id': true
       },
       requestValidator: ApiParameterValidator

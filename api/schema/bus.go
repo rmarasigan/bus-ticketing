@@ -34,13 +34,13 @@ func (bus Bus) Error(err error, code, message string, kv ...utility.KVP) {
 	utility.Error(err, code, message, kv...)
 }
 
-// key uses company name, removes the vowel letters and converts
-// it to uppercase to generate a key value of bus that will be used
-// for the bus ID.
+// partialPrimaryKey uses company name, removes the vowel letters and
+// converts it to uppercase to generate a key value of bus that will
+// be used for the bus ID.
 //
 // Example:
 //		id: RLBSW-856996
-func (bus Bus) key() string {
+func (bus Bus) partialPrimaryKey() string {
 	key, err := app.RemoveVowel(bus.Company)
 	if err != nil {
 		bus.Error(err, "Key", "failed to remove vowel letters.")
@@ -64,7 +64,7 @@ func (bus Bus) key() string {
 //		date_created: 1685699666
 func (bus *Bus) SetValues() {
 	bus.DateCreated = fmt.Sprint(time.Now().Unix())
-	bus.ID = fmt.Sprintf("%s-%s", bus.key(), bus.DateCreated[2:8])
+	bus.ID = fmt.Sprintf("%s-%s", bus.partialPrimaryKey(), bus.DateCreated[2:8])
 }
 
 // FailedBus represents the failed bus that needs to be re-processed.

@@ -63,7 +63,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return api.StatusInternalServerError(err)
 	}
 
-	// Fetch the existing bus line record/information
+	// Fetch the existing bus line record
 	busLine, err := query.GetBusLine(ctx, id_query, name_query)
 	if err != nil {
 		bus.Error(err, "DynamoDBError", "failed to fetch the bus line record")

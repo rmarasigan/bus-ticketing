@@ -5,7 +5,7 @@ The Bus API Schema contains the bus information. In this module, it will let you
 * [Filter Bus Record](#filter-bus-record)
 * [Update Bus Record](#update-bus-record)
 
-## Table Structure
+## Data Structure
 <table>
   <tr>
     <th>Field</th>
@@ -24,18 +24,14 @@ The Bus API Schema contains the bus information. In this module, it will let you
       <code>name</code>
     </td>
     <td>string</td>
-    <td>
-     The name of the bus line and is the primary key.
-    </td>
+    <td>The name of the bus line and is the primary key.</td>
   </tr>
   <tr>
     <td>
       <code>owner</code>
     </td>
     <td>string</td>
-    <td>
-      The name of the bus company owner.
-    </td>
+    <td>The name of the bus company owner.</td>
   </tr>
   <tr>
     <td>
@@ -56,9 +52,7 @@ The Bus API Schema contains the bus information. In this module, it will let you
       <code>company</code>
     </td>
     <td>string</td>
-    <td>
-      The name of the bus company and is the sort key.
-    </td>
+    <td>The name of the bus company and is the sort key.</td>
   </tr>
   <tr>
     <td>
@@ -75,7 +69,6 @@ The Bus API Schema contains the bus information. In this module, it will let you
     <td>The date that this bus information was created.</td>
   </tr>
 </table>
-
 
 ## API Usage and Specification
 #### Headers

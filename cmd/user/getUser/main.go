@@ -17,7 +17,7 @@ func main() {
 }
 
 // It receives the Amazon API Gateway event record data as input, validates the
-// request query, fetches the user account record/information, and responds with
+// request query, fetches the user account record, and responds with
 // a 200 OK HTTP Status.
 //
 // Endpoint:
@@ -44,7 +44,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		username_query = request.QueryStringParameters["username"]
 	)
 
-	// Fetch the existing user account record/information
+	// Fetch the existing user account record
 	account, err := query.GetUserAccount(ctx, id_query, username_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the user account record", utility.KVP{Key: "username", Value: username_query})

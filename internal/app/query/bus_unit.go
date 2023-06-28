@@ -77,7 +77,7 @@ func GetBusUnit(ctx context.Context, code, busId string) (schema.BusUnit, error)
 }
 
 // CreateBusUnit checks if the DynamoDB Table is configured on the environment, and
-// creates a new bus unit record/information.
+// creates a new bus unit record.
 func CreateBusUnit(ctx context.Context, data interface{}) error {
 	var tablename = env.BUS_UNIT
 

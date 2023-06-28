@@ -5,7 +5,7 @@ The User API Schema contains the user account information. In this module, it wi
 * [Get user account information](#get-user-account)
 * [Update user account properties](#update-user-account)
 
-## Table Structure
+## Data Structure
 <table>
   <tr>
     <th>Field</th>

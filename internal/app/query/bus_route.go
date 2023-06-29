@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/env"
 	awswrapper "github.com/rmarasigan/bus-ticketing/internal/aws_wrapper"
@@ -40,14 +41,14 @@ func GetBusRoute(ctx context.Context, id, busId string) (schema.BusRoute, error)
 		expression.Name("bus_unit_id"),
 		expression.Name("currency_code"),
 		expression.Name("rate"),
-		expression.Name("available"),
+		expression.Name("active"),
 		expression.Name("departure_time"),
 		expression.Name("arrival_time"),
 		expression.Name("from_route"),
 		expression.Name("to_route"),
 	}
 
-	// SELECT id, bus_id, bus_unit_id, currency_code, rate, available,
+	// SELECT id, bus_id, bus_unit_id, currency_code, rate, active,
 	// departure_time, arrival_time, from_route, to_route
 	projection := expression.NamesList(expression.Name("id"), namesList...)
 
@@ -106,6 +107,38 @@ func CreateBusRoute(ctx context.Context, data interface{}) error {
 	return nil
 }
 
+// UpdateBusRoute checks if the DynamoDB Table is configured on the environment and
+// updates the bus routes information or record.
+func UpdateBusRoute(ctx context.Context, key map[string]types.AttributeValue, update expression.UpdateBuilder) (schema.BusRoute, error) {
+	var (
+		route     schema.BusRoute
+		tablename = env.BUS_ROUTE_TABLE
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BUS_ROUTE_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BUS_ROUTE_TABLE environment variable is not set")
+
+		return route, err
+	}
+
+	result, err := UpdateItem(ctx, tablename, key, update)
+	if err != nil {
+		trail.Error("failed to update the bus route record")
+		return route, err
+	}
+
+	// Unmarshal a map into actual bus route struct which the front-end
+	// can understan as a JSON
+	err = awswrapper.DynamoDBUnmarshalMap(&route, result.Attributes)
+	if err != nil {
+		return route, err
+	}
+
+	return route, nil
+}
+
 // FilterBusRoute checks if the DynamoDB Table is configured on the environment, fetches
 // and returns a list of bus routes information.
 func FilterBusRoute(ctx context.Context, route schema.BusRouteFilter) ([]schema.BusRoute, error) {
@@ -124,11 +157,9 @@ func FilterBusRoute(ctx context.Context, route schema.BusRouteFilter) ([]schema.
 		return routes, err
 	}
 
-	trail.Debug("FilterBusRoute:  %v", route)
-
 	// Construct the filter builder with a name that contains a specified value.
-	if route.Available != nil {
-		filterList = append(filterList, expression.Name("available").Equal(expression.Value(route.Available)))
+	if route.Active != nil {
+		filterList = append(filterList, expression.Name("active").Equal(expression.Value(route.Active)))
 	}
 
 	if route.Departure != "" {
@@ -147,7 +178,18 @@ func FilterBusRoute(ctx context.Context, route schema.BusRouteFilter) ([]schema.
 		filterList = append(filterList, expression.Name("to_route").Equal(expression.Value(route.ToRoute)))
 	}
 
-	filter = expression.Name("bus_id").Equal(expression.Value(route.BusID)).And(expression.Name("bus_unit_id").Equal(expression.Value(route.BusUnitID)), filterList...)
+	if route.BusUnitID != "" {
+		filter = expression.Name("bus_id").Equal(expression.Value(route.BusID)).And(expression.Name("bus_unit_id").Equal(expression.Value(route.BusUnitID)), filterList...)
+
+	} else {
+		if len(filterList) > 0 {
+			filter = expression.And(expression.Name("bus_id").Equal(expression.Value(route.BusID)), filterList[0], filterList[1:]...)
+
+		} else {
+			filter = expression.Name("bus_id").Equal(expression.Value(route.BusID))
+		}
+	}
+
 	result, err := FilterItems(ctx, tablename, filter)
 	if err != nil {
 		return routes, err

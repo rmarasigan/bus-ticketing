@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -49,6 +50,19 @@ func (user User) Error(err error, code, message string, kv ...utility.KVP) {
 
 	kv = append(kv, utility.KVP{Key: "Integration", Value: "Bus Ticketing – User"})
 	utility.Error(err, code, message, kv...)
+}
+
+// IsEmptyPayload checks if the request payload is empty and if it is,
+// it will return an error message.
+func (user User) IsEmptyPayload(payload string) error {
+	if payload == "" {
+		err := errors.New("payload is required")
+		user.Error(err, "APIError", "the request payload is empty")
+
+		return err
+	}
+
+	return nil
 }
 
 // LastLogIn returns the current time when the user logged in.

@@ -10,6 +10,43 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
 
+// UpdateBusRouteFields validates if the field that are going to be updated
+// are empty or not to set its previous value.
+//
+// Fields that are validated:
+//  currency_code, rate, active, departure_time, arrival_time, from_route, to_route
+func UpdateBusRouteFields(route, old schema.BusRoute) schema.BusRoute {
+	if route.Currency == "" {
+		route.Currency = old.Currency
+	}
+
+	if route.Rate == nil {
+		route.Rate = old.Rate
+	}
+
+	if route.Active == nil {
+		route.Active = old.Active
+	}
+
+	if route.DepartureTime == "" {
+		route.DepartureTime = old.DepartureTime
+	}
+
+	if route.ArrivalTime == "" {
+		route.ArrivalTime = old.ArrivalTime
+	}
+
+	if route.FromRoute == "" {
+		route.FromRoute = old.FromRoute
+	}
+
+	if route.ToRoute == "" {
+		route.ToRoute = old.ToRoute
+	}
+
+	return route
+}
+
 // IsBusRouteExisting checks if the DynamoDB Table is configured on the environment, and
 // returns a boolean and error value to check whether the bus route alreadu exist or not.
 func IsBusRouteExisting(ctx context.Context, routefilter schema.BusRouteFilter) (bool, error) {

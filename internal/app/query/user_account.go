@@ -68,7 +68,7 @@ func GetUserAccount(ctx context.Context, id, username string) (schema.User, erro
 		return user, err
 	}
 
-	// Unmarshal a map into actual user which the front-end can
+	// Unmarshal a map into actual user struct which the front-end can
 	// understand as a JSON.
 	if result.Count > 0 {
 		err := awswrapper.DynamoDBUnmarshalMap(&user, result.Items[0])
@@ -125,7 +125,7 @@ func UpdateUserAcccount(ctx context.Context, key map[string]types.AttributeValue
 		return user, err
 	}
 
-	// Unmarshal a map into actual user which the front-end can
+	// Unmarshal a map into actual user struct which the front-end can
 	// understand as a JSON.
 	err = awswrapper.DynamoDBUnmarshalMap(&user, result.Attributes)
 	if err != nil {

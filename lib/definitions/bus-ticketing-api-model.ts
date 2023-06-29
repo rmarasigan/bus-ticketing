@@ -214,7 +214,7 @@ export function BusRouteApiModel(api: apigw.RestApi) {
           minimum: 1,
           type: apigw.JsonSchemaType.NUMBER
         },
-        available: {
+        active: {
           type: apigw.JsonSchemaType.BOOLEAN
         },
         departure_time: {
@@ -234,7 +234,7 @@ export function BusRouteApiModel(api: apigw.RestApi) {
           type: apigw.JsonSchemaType.STRING
         }
       },
-      required: [ 'bus_id', 'bus_unit_id', 'currency_code', 'rate', 'available', 'departure_time', 'arrival_time', 'from_route', 'to_route' ]
+      required: [ 'bus_id', 'bus_unit_id', 'currency_code', 'rate', 'active', 'departure_time', 'arrival_time', 'from_route', 'to_route' ]
     }
   });
 }

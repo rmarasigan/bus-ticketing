@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -32,6 +33,19 @@ func (bus Bus) Error(err error, code, message string, kv ...utility.KVP) {
 
 	kv = append(kv, utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus"})
 	utility.Error(err, code, message, kv...)
+}
+
+// IsEmptyPayload checks if the request payload is empty and if it is,
+// it will return an error message.
+func (bus Bus) IsEmptyPayload(payload string) error {
+	if payload == "" {
+		err := errors.New("payload is required")
+		bus.Error(err, "APIError", "the request payload is empty")
+
+		return err
+	}
+
+	return nil
 }
 
 // partialPrimaryKey uses company name, removes the vowel letters and

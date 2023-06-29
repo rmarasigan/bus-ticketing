@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -14,23 +15,40 @@ import (
 // The "dynamodbav" struct tag can be used to control the value
 // that will be marshaled into a AttributeValue.
 type BusRoute struct {
-	ID            string  `json:"id" dynamodbav:"id"`                                             // Unique bus route ID as the primary key
-	BusID         string  `json:"bus_id" dynamodbav:"bus_id"`                                     // The Bus ID as the sort key
-	BusUnitID     string  `json:"bus_unit_id" dynamodbav:"bus_unit_id"`                           // The Bus Unit ID for the identification of specific bus unit route
-	Currency      string  `json:"currency_code" dynamodbav:"currency_code"`                       // Medium of exchange for goods and services
-	Rate          float64 `json:"rate" dynamodbav:"rate"`                                         // Fare charged to the passenger
-	Available     *bool   `json:"available" dynamodbav:"available"`                               // Defines if the bus is available for that route
-	DepartureTime string  `json:"departure_time" dynamodbav:"departure_time"`                     // Expected departure time on the starting point and in 24-hour format
-	ArrivalTime   string  `json:"arrival_time" dynamodbav:"arrival_time"`                         // Expected arrival time on the destination and in 24-hour format
-	FromRoute     string  `json:"from_route" dynamodbav:"from_route"`                             // Indicating the starting point of a bus
-	ToRoute       string  `json:"to_route" dynamodbav:"to_route"`                                 // Indicating the destination of bus
-	DateCreated   string  `json:"date_created,omitempty" dynamodbav:"date_created,omitemptyelem"` // The date it was created as unix epoch time
+	ID            string   `json:"id" dynamodbav:"id"`                                             // Unique bus route ID as the primary key
+	BusID         string   `json:"bus_id" dynamodbav:"bus_id"`                                     // The Bus ID as the sort key
+	BusUnitID     string   `json:"bus_unit_id" dynamodbav:"bus_unit_id"`                           // The Bus Unit ID for the identification of specific bus unit route
+	Currency      string   `json:"currency_code" dynamodbav:"currency_code"`                       // Medium of exchange for goods and services
+	Rate          *float64 `json:"rate" dynamodbav:"rate"`                                         // Fare charged to the passenger
+	Active        *bool    `json:"active" dynamodbav:"active"`                                     // Defines if the bus is available for that route
+	DepartureTime string   `json:"departure_time" dynamodbav:"departure_time"`                     // Expected departure time on the starting point and in 24-hour format
+	ArrivalTime   string   `json:"arrival_time" dynamodbav:"arrival_time"`                         // Expected arrival time on the destination and in 24-hour format
+	FromRoute     string   `json:"from_route" dynamodbav:"from_route"`                             // Indicating the starting point of a bus
+	ToRoute       string   `json:"to_route" dynamodbav:"to_route"`                                 // Indicating the destination of bus
+	DateCreated   string   `json:"date_created,omitempty" dynamodbav:"date_created,omitemptyelem"` // The date it was created as unix epoch time
 }
 
 // Error sets the default key-value pair.
 func (route BusRoute) Error(err error, code, message string, kv ...utility.KVP) {
+	if route != (BusRoute{}) {
+		kv = append(kv, utility.KVP{Key: "bus_route", Value: route})
+	}
+
 	kv = append(kv, utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus Route"})
 	utility.Error(err, code, message, kv...)
+}
+
+// IsEmptyPayload checks if the request payload is empty and if it is,
+// it will return an error message.
+func (route BusRoute) IsEmptyPayload(payload string) error {
+	if payload == "" {
+		err := errors.New("payload is required")
+		route.Error(err, "APIError", "the request payload is empty")
+
+		return err
+	}
+
+	return nil
 }
 
 // primaryKey uses from_route, to_route, departure_time and arrival_time
@@ -86,7 +104,7 @@ func (route *BusRoute) SetValues() {
 type BusRouteFilter struct {
 	BusID     string
 	BusUnitID string
-	Available *bool
+	Active    *bool
 	Departure string
 	Arrival   string
 	FromRoute string
@@ -99,7 +117,7 @@ func (route BusRoute) SetFilter() BusRouteFilter {
 	return BusRouteFilter{
 		BusID:     route.BusID,
 		BusUnitID: route.BusUnitID,
-		Available: route.Available,
+		Active:    route.Active,
 		Departure: route.DepartureTime,
 		Arrival:   route.ArrivalTime,
 		FromRoute: route.FromRoute,

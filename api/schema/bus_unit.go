@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -35,6 +36,19 @@ func (unit BusUnit) Error(err error, code, message string, kv ...utility.KVP) {
 
 	kv = append(kv, utility.KVP{Key: "Integration", Value: "Bus Ticketing – Bus Unit"})
 	utility.Error(err, code, message, kv...)
+}
+
+// IsEmptyPayload checks if the request payload is empty and if it is,
+// it will return an error message.
+func (unit BusUnit) IsEmptyPayload(payload string) error {
+	if payload == "" {
+		err := errors.New("payload is required")
+		unit.Error(err, "APIError", "the request payload is empty")
+
+		return err
+	}
+
+	return nil
 }
 
 // SetValues automatically generates the Bus Unit ID as your primary

@@ -27,7 +27,7 @@ func main() {
 // Sample API Payload:
 // 	{
 // 	  "rate": 120,
-// 	  "available": true,
+// 	  "active": true,
 // 	  "currency_code": "PHP",
 // 	  "bus_id": "BCBSCMPN-875011",
 // 	  "bus_unit_id": "BCBSCMPNBUS001",

@@ -72,7 +72,8 @@ func GetBusLine(ctx context.Context, id, name string) (schema.Bus, error) {
 		return bus, err
 	}
 
-	// Unmarshal a map into actual use which front-end can understand as a JSON
+	// Unmarshal a map into actual bus struct which the front-end can
+	// understand as a JSON.
 	if result.Count > 0 {
 		err := awswrapper.DynamoDBUnmarshalMap(&bus, result.Items[0])
 		if err != nil {

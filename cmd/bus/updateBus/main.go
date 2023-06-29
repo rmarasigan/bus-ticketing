@@ -54,8 +54,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		name_query = request.QueryStringParameters["name"]
 	)
 
+	err := bus.IsEmptyPayload(request.Body)
+	if err != nil {
+		return api.StatusBadRequest(err)
+	}
+
 	// Unmarshal the received JSON-encoded data
-	err := utility.ParseJSON([]byte(request.Body), bus)
+	err = utility.ParseJSON([]byte(request.Body), bus)
 	if err != nil {
 		bus.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data",
 			utility.KVP{Key: "payload", Value: request.Body})

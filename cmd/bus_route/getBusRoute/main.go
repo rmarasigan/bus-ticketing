@@ -34,7 +34,7 @@ func main() {
 // 		"bus_unit_id": "SNRSBSSBUS002",
 // 		"currency_code": "PHP",
 // 		"rate": 90,
-// 		"available": true,
+// 		"active": true,
 // 		"departure_time": "15:00",
 // 		"arrival_time": "19:00",
 // 		"from_route": "Route A",

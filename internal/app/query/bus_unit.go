@@ -121,7 +121,7 @@ func UpdateBusUnit(ctx context.Context, key map[string]types.AttributeValue, upd
 		return unit, err
 	}
 
-	// Unmarshal a map into actual bus struct which the front-end can
+	// Unmarshal a map into actual bus unit struct which the front-end can
 	// understand as a JSON
 	err = awswrapper.DynamoDBUnmarshalMap(&unit, result.Attributes)
 	if err != nil {

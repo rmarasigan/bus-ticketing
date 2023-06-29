@@ -292,6 +292,36 @@ export class BusTicketingStack extends cdk.Stack
     BusRouteTable.grantReadData(getBusRoute);
     getBusRoute.applyRemovalPolicy(REMOVAL_POLICY);
 
+    const filterBusRoute = new lambda.Function(this, 'filterBusRoute', {
+      memorySize: 1024,
+      handler: 'filterBusRoute',
+      functionName: 'filterBusRoute',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus_route/filterBusRoute'),
+      description: 'A Lambda Function that will process API requests and filter the bus unit route record depending on the passed query',
+      environment: {
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName
+      }
+    });
+    BusRouteTable.grantReadData(filterBusRoute);
+    filterBusRoute.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const updateBusRoute = new lambda.Function(this, 'updateBusRoute', {
+      memorySize: 1024,
+      handler: 'updateBusRoute',
+      functionName: 'updateBusRoute',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bus_route/updateBusRoute'),
+      description: 'A Lambda Function that will process API requests and update the bus route record',
+      environment: {
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName
+      }
+    });
+    BusRouteTable.grantReadWriteData(updateBusRoute);
+    updateBusRoute.applyRemovalPolicy(REMOVAL_POLICY);
+
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
       deploy: true,
@@ -475,6 +505,25 @@ export class BusTicketingStack extends cdk.Stack
     const getBusRouteApiIntegration = new apigw.LambdaIntegration(getBusRoute);
     const getBusRouteApi = BusRouteApiRoot.addResource('get');
     getBusRouteApi.addMethod('GET', getBusRouteApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.id': true,
+        'method.request.querystring.bus_id': true
+      },
+      requestValidator: ApiParameterValidator
+    });
+
+    const filterBusRouteApiIntegration = new apigw.LambdaIntegration(filterBusRoute);
+    const filterBusRouteApi = BusRouteApiRoot.addResource('search');
+    filterBusRouteApi.addMethod('GET', filterBusRouteApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.bus_id': true
+      },
+      requestValidator: ApiParameterValidator
+    });
+
+    const updateBusRouteApiIntegration = new apigw.LambdaIntegration(updateBusRoute);
+    const updateBusRouteApi = BusRouteApiRoot.addResource('update');
+    updateBusRouteApi.addMethod('POST', updateBusRouteApiIntegration, {
       requestParameters: {
         'method.request.querystring.id': true,
         'method.request.querystring.bus_id': true

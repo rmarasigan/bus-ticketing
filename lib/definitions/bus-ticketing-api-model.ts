@@ -238,3 +238,47 @@ export function BusRouteApiModel(api: apigw.RestApi) {
     }
   });
 }
+
+/**
+ * Represents the data structure of the creation of *Booking* payload and
+ * accepts an object with the following fields and are validated:
+ * 
+ * `user_id`, `bus_id`, `bus_route_id`, `seat_number`, `status`, `timestamp`
+ * 
+ * @param api REST API that this model is part of.
+**/
+export function BookingApiModel(api: apigw.RestApi) {
+  return api.addModel('BusTicketingBookingApiModel', {
+    modelName: 'BusTicketingBookingApiModel',
+    schema: {
+      type: apigw.JsonSchemaType.OBJECT,
+      properties: {
+        user_id: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        bus_id: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        bus_route_id: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        seat_number: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        status: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        timestamp: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        }
+      },
+      required: [ 'user_id', 'bus_id', 'bus_route_id', 'seat_number', 'status', 'timestamp' ]
+    }
+  });
+}

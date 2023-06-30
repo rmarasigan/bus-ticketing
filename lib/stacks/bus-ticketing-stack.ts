@@ -1,9 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
-import { UserApiModel, UserLoginApiModel, BusLineApiModel, BusUnitApiModel, BusRouteApiModel } from '../definitions/bus-ticketing-api-model';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as eventsource from 'aws-cdk-lib/aws-lambda-event-sources';
+import { UserApiModel, UserLoginApiModel, BusLineApiModel, BusUnitApiModel, BusRouteApiModel, BookingApiModel } from '../definitions/bus-ticketing-api-model';
 
 export class BusTicketingStack extends cdk.Stack
 {
@@ -73,6 +75,20 @@ export class BusTicketingStack extends cdk.Stack
       },
       sortKey: {
         name: "bus_id",
+        type: dynamodb.AttributeType.STRING
+      }
+    });
+
+    // 5. Create a DynamoDB Table that will contain the Booking information that has a
+    // partition and sort key.
+    const BookingTable = new dynamodb.Table(this, 'BusTicketing_BookingTable', {
+      tableName: 'BusTicketing_BookingTable',
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: "bus_route_id",
         type: dynamodb.AttributeType.STRING
       }
     });
@@ -322,6 +338,67 @@ export class BusTicketingStack extends cdk.Stack
     BusRouteTable.grantReadWriteData(updateBusRoute);
     updateBusRoute.applyRemovalPolicy(REMOVAL_POLICY);
 
+    // ***** Booking Lambda Functions and SQS Specification ***** //
+    // SQS QUEUE
+    // 1. Create a deadletter queue that will contain the unsuccessfully
+    // processed and should have a ".fifo" to the queue name.
+    const deadLetterQueue = new sqs.Queue(this, 'bus-ticketing-booking-dlq.fifo', {
+      fifo: true,
+      contentBasedDeduplication: true,
+      queueName: 'bus-ticketing-booking-dlq.fifo',
+      removalPolicy: REMOVAL_POLICY
+    });
+
+    // 2. Create a queue that is configured to be a FIFO queue with deadletter
+    // queue. It is needed to add a ".fifo" to the queue name.
+    const bookingQueue = new sqs.Queue(this, 'bus-ticketing-booking.fifo', {
+      fifo: true,
+      queueName: 'bus-ticketing-booking.fifo',
+      deadLetterQueue: {
+        queue: deadLetterQueue,
+        maxReceiveCount: 5
+      },
+      removalPolicy: REMOVAL_POLICY,
+      contentBasedDeduplication: true,
+      visibilityTimeout: cdk.Duration.seconds(120)
+    });
+    
+    const createBooking = new lambda.Function(this, 'createBooking', {
+      memorySize: 1024,
+      handler: 'createBooking',
+      functionName: 'createBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(90),
+      code: lambda.Code.fromAsset('cmd/bookings/createBooking'),
+      description: 'A Lambda Function that will process API requests and sends new booking record to the SQS Queue',
+      environment: {
+        "BOOKING_QUEUE": bookingQueue.queueUrl
+      }
+    });
+    bookingQueue.grantSendMessages(createBooking);
+    createBooking.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const processBooking = new lambda.Function(this, 'processBooking', {
+      memorySize: 1024,
+      handler: 'processBooking',
+      functionName: 'processBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(90),
+      code: lambda.Code.fromAsset('cmd/bookings/processBooking'),
+      description: 'A Lambda Function that will process SQS events and process booking record',
+      environment: {
+        "BOOKING_TABLE": BookingTable.tableName
+      }
+    });
+    BookingTable.grantReadWriteData(processBooking);
+    processBooking.applyRemovalPolicy(REMOVAL_POLICY);
+
+    processBooking.addEventSource(new eventsource.SqsEventSource(bookingQueue, {
+      enabled: true,
+      batchSize: 1,
+      reportBatchItemFailures: true
+    }));
+
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
       deploy: true,
@@ -529,6 +606,20 @@ export class BusTicketingStack extends cdk.Stack
         'method.request.querystring.bus_id': true
       },
       requestValidator: ApiParameterValidator
+    });
+
+    // ***** Booking API Specification ***** //
+    const BookingApiRoot = api.root.addResource('bookings');
+    BookingApiRoot.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const BookingModel = BookingApiModel(api);
+    const createBookingApiIntegration = new apigw.LambdaIntegration(createBooking);
+    const createBookingApi = BookingApiRoot.addResource('create');
+    createBookingApi.addMethod('POST', createBookingApiIntegration, {
+      requestModels: {
+        'application/json': BookingModel
+      },
+      requestValidator: ApiRequestBodyValidator
     });
   }
 }

@@ -6,24 +6,26 @@ require (
 	github.com/aws/aws-cdk-go/awscdk v1.203.0-devpreview
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.81.0
 	github.com/aws/aws-lambda-go v1.41.0
-	github.com/aws/aws-sdk-go-v2 v1.18.0
+	github.com/aws/aws-sdk-go-v2 v1.18.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.25
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.25
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.52
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.7
 	github.com/aws/aws-sdk-go-v2/service/eventbridge v1.19.2
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.19.10
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.22.0
 	github.com/aws/constructs-go/constructs/v10 v10.2.39
 	github.com/aws/constructs-go/constructs/v3 v3.4.313
 	github.com/aws/jsii-runtime-go v1.82.0
+	github.com/google/uuid v1.3.0
 )
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.24 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.3 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.33 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.34 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.28 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.34 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.14.11 // indirect

@@ -24,7 +24,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	)
 
 	// Check if the queue is configured
-	if len(queue) == 0 {
+	if queue == "" {
 		err := errors.New("sqs BOOKING_QUEUE environment variable is not set")
 		booking.Error(err, "SQSError", "sqs BOOKING_QUEUE is not configured on the environment")
 
@@ -37,6 +37,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	if err != nil {
 		booking.Error(err, "JSONError", "failed to unmarshal the JSON-encoded data", utility.KVP{Key: "payload", Value: request.Body})
 		return api.StatusInternalServerError(err)
+	}
+
+	// Validate if the booking status is a valid one.
+	err = booking.IsValidStatus()
+	if err != nil {
+		booking.Error(err, "APIError", "the booking status is invalid")
+		return api.StatusBadRequest(err)
 	}
 
 	// Send the message to the queue

@@ -80,6 +80,43 @@ func GetUserAccount(ctx context.Context, id, username string) (schema.User, erro
 	return user, nil
 }
 
+// GetUserAccountById checks if the DynamoDB Table is configured on the environment, and
+// fetch the user account by id and returns the user account information.
+func GetUserAccountById(ctx context.Context, id string) (schema.User, error) {
+	var (
+		user      schema.User
+		tablename = env.USERS_TABLE
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb USERS_TABLE is not configured on the environment")
+		err := errors.New("dynamodb USERS_TABLE environment variable is not set")
+
+		return user, err
+	}
+
+	// Construct the filter builder with a name that contains a specified value.
+	// WHERE id = id_value
+	filter := expression.Name("id").Equal(expression.Value(id))
+
+	result, err := FilterItems(ctx, tablename, filter)
+	if err != nil {
+		return user, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual user struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalMap(&user, result.Items[0])
+		if err != nil {
+			return user, err
+		}
+	}
+
+	return user, nil
+}
+
 // CreateUserAccount checks if the DynamoDB Table is configured on the environment, and
 // creates a new user account.
 func CreateUserAccount(ctx context.Context, data interface{}) error {

@@ -273,12 +273,20 @@ export function BookingApiModel(api: apigw.RestApi) {
           pattern: '^.+',
           type: apigw.JsonSchemaType.STRING
         },
+        travel_date: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
+        reason: {
+          pattern: '^.+',
+          type: apigw.JsonSchemaType.STRING
+        },
         timestamp: {
           pattern: '^.+',
           type: apigw.JsonSchemaType.STRING
         }
       },
-      required: [ 'user_id', 'bus_id', 'bus_route_id', 'seat_number', 'status', 'timestamp' ]
+      required: [ 'user_id', 'bus_id', 'bus_route_id', 'travel_date', 'seat_number', 'status', 'timestamp' ]
     }
   });
 }

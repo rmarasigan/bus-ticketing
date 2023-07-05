@@ -4,6 +4,9 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import *  as eventbridge from 'aws-cdk-lib/aws-events';
+import * as eventtarget from 'aws-cdk-lib/aws-events-targets';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as eventsource from 'aws-cdk-lib/aws-lambda-event-sources';
 import { UserApiModel, UserLoginApiModel, BusLineApiModel, BusUnitApiModel, BusRouteApiModel, BookingApiModel } from '../definitions/bus-ticketing-api-model';
 
@@ -16,17 +19,23 @@ export class BusTicketingStack extends cdk.Stack
     //  When the resource is removed from the app, it will be physically destroyed.
     const REMOVAL_POLICY = cdk.RemovalPolicy.DESTROY;
 
+    // ******************** Secrets Manager ******************** //
+    const EmailSecret = secretsmanager.Secret.fromSecretCompleteArn(this,
+      'BusTicketing_EmailSecret',
+      'YOUR_AWS_SECRETS_MANAGER_ARN'
+    );
+
     // ******************** DynamoDB ******************** //
     // 1. Create a DynamoDB Table that will contain the basic user record
     // that has a partition and sort key.
     const UsersTable = new dynamodb.Table(this, 'BusTicketing_UsersTable', {
       tableName: 'BusTicketing_UsersTable',
       partitionKey: {
-        name: "username",
+        name: 'username',
         type: dynamodb.AttributeType.STRING
       },
       sortKey: {
-        name: "id",
+        name: 'id',
         type: dynamodb.AttributeType.STRING
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -38,11 +47,11 @@ export class BusTicketingStack extends cdk.Stack
     const BusTable = new dynamodb.Table(this, 'BusTicketing_BusTable', {
       tableName: 'BusTicketing_BusTable',
       partitionKey: {
-        name: "name",
+        name: 'name',
         type: dynamodb.AttributeType.STRING
       },
       sortKey: {
-        name: "company",
+        name: 'company',
         type: dynamodb.AttributeType.STRING
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -54,11 +63,11 @@ export class BusTicketingStack extends cdk.Stack
     const BusUnitTable = new dynamodb.Table(this, 'BusTicketing_BusUnitTable', {
       tableName: 'BusTicketing_BusUnitTable',
       partitionKey: {
-        name: "code",
+        name: 'code',
         type: dynamodb.AttributeType.STRING
       },
       sortKey: {
-        name: "bus_id",
+        name: 'bus_id',
         type: dynamodb.AttributeType.STRING
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -70,13 +79,15 @@ export class BusTicketingStack extends cdk.Stack
     const BusRouteTable = new dynamodb.Table(this, 'BusTicketing_BusRouteTable', {
       tableName: 'BusTicketing_BusRouteTable',
       partitionKey: {
-        name: "id",
+        name: 'id',
         type: dynamodb.AttributeType.STRING
       },
       sortKey: {
-        name: "bus_id",
+        name: 'bus_id',
         type: dynamodb.AttributeType.STRING
-      }
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: REMOVAL_POLICY
     });
 
     // 5. Create a DynamoDB Table that will contain the Booking information that has a
@@ -84,13 +95,25 @@ export class BusTicketingStack extends cdk.Stack
     const BookingTable = new dynamodb.Table(this, 'BusTicketing_BookingTable', {
       tableName: 'BusTicketing_BookingTable',
       partitionKey: {
-        name: "id",
+        name: 'id',
         type: dynamodb.AttributeType.STRING
       },
       sortKey: {
-        name: "bus_route_id",
+        name: 'bus_route_id',
         type: dynamodb.AttributeType.STRING
       }
+    });
+
+    // 6. Create a DynamoDB Table that will contain the Cancelled Booking information
+    // that has a partition/primary key.
+    const CancelledBookingTable = new dynamodb.Table(this, 'BusTicketing_CancelledBookingTable', {
+      tableName: 'BusTicketing_CancelledBookingTable',
+      partitionKey: {
+        name: 'booking_id',
+        type: dynamodb.AttributeType.STRING
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: REMOVAL_POLICY
     });
 
     // ******************** Lambda Functions ******************** //
@@ -342,7 +365,7 @@ export class BusTicketingStack extends cdk.Stack
     // SQS QUEUE
     // 1. Create a deadletter queue that will contain the unsuccessfully
     // processed and should have a ".fifo" to the queue name.
-    const deadLetterQueue = new sqs.Queue(this, 'bus-ticketing-booking-dlq.fifo', {
+    const bookingDeadLetterQueue = new sqs.Queue(this, 'bus-ticketing-booking-dlq.fifo', {
       fifo: true,
       contentBasedDeduplication: true,
       queueName: 'bus-ticketing-booking-dlq.fifo',
@@ -355,8 +378,8 @@ export class BusTicketingStack extends cdk.Stack
       fifo: true,
       queueName: 'bus-ticketing-booking.fifo',
       deadLetterQueue: {
-        queue: deadLetterQueue,
-        maxReceiveCount: 5
+        maxReceiveCount: 5,
+        queue: bookingDeadLetterQueue
       },
       removalPolicy: REMOVAL_POLICY,
       contentBasedDeduplication: true,
@@ -398,6 +421,110 @@ export class BusTicketingStack extends cdk.Stack
       batchSize: 1,
       reportBatchItemFailures: true
     }));
+
+    const eventbus = new eventbridge.EventBus(this, 'bus-ticketing-booking-eventbus');
+    eventbus.archive('bus-ticketing-booking-event-archive', {
+      eventPattern: {
+        region: [ cdk.Stack.of(this).region ],
+        account: [ cdk.Stack.of(this).account ]
+      },
+      retention: cdk.Duration.days(30),
+      archiveName: 'bus-ticketing-booking-event-archive'
+    });
+
+    const updateBookingStatus = new lambda.Function(this, 'updateBookingStatus', {
+      memorySize: 1024,
+      handler: 'updateBookingStatus',
+      functionName: 'updateBookingStatus',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/updateBookingStatus'),
+      environment: {
+        "EVENT_BUS": eventbus.eventBusName,
+        "BOOKING_TABLE": BookingTable.tableName
+      }
+    });
+    eventbus.grantPutEventsTo(updateBookingStatus);
+    BookingTable.grantReadData(updateBookingStatus);
+    updateBookingStatus.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const confirmedBooking = new lambda.Function(this, 'confirmedBooking', {
+      memorySize: 1024,
+      handler: 'confirmedBooking',
+      functionName: 'confirmedBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/confirmedBooking'),
+      environment: {
+        "USERS_TABLE": UsersTable.tableName,
+        "EMAIL_SECRET": EmailSecret.secretArn,
+        "BOOKING_TABLE": BookingTable.tableName,
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName
+      }
+    });
+    EmailSecret.grantRead(confirmedBooking);
+    UsersTable.grantReadData(confirmedBooking);
+    BusRouteTable.grantReadData(confirmedBooking);
+    BookingTable.grantReadWriteData(confirmedBooking);
+    confirmedBooking.applyRemovalPolicy(REMOVAL_POLICY);
+
+    // A rule in where to send the confirmed booking events,
+    // associated with the event bus with the said rule and
+    // add a custom event source as long as it is not starting
+    // with "aws".
+    new eventbridge.Rule(this, 'bus-ticketing-booking-confirmed-rule', {
+      enabled: true,
+      eventBus: eventbus,
+      ruleName: 'bus-ticketing-booking-confirmed-rule',
+      eventPattern: {
+        source: [ 'booking:confirmed' ]
+      },
+      targets: [
+        new eventtarget.LambdaFunction(confirmedBooking, {
+          retryAttempts: 5
+        })
+      ],
+    });
+
+    const cancelledBooking = new lambda.Function(this, 'cancelledBooking', {
+      memorySize: 1024,
+      handler: 'cancelledBooking',
+      functionName: 'cancelledBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/cancelledBooking'),
+      environment: {
+        "USERS_TABLE": UsersTable.tableName,
+        "EMAIL_SECRET": EmailSecret.secretArn,
+        "BOOKING_TABLE": BookingTable.tableName,
+        "BUS_ROUTE_TABLE": BusRouteTable.tableName,
+        "BOOKING_CANCELLED_TABLE": CancelledBookingTable.tableName
+      }
+    });
+    EmailSecret.grantRead(cancelledBooking);
+    UsersTable.grantReadData(cancelledBooking);
+    BusRouteTable.grantReadData(cancelledBooking);
+    BookingTable.grantReadWriteData(cancelledBooking);
+    cancelledBooking.applyRemovalPolicy(REMOVAL_POLICY);
+    CancelledBookingTable.grantReadWriteData(cancelledBooking);
+
+    // A rule in where to send the cancelled booking events,
+    // associated with the event bus with the said rule and
+    // add a custom event source as long as it is not starting
+    // with "aws".
+    new eventbridge.Rule(this, 'bus-ticketing-booking-cancelled-rule', {
+      enabled: true,
+      eventBus: eventbus,
+      ruleName: 'bus-ticketing-booking-cancelled-rule',
+      eventPattern: {
+        source: [ 'booking:cancelled' ]
+      },
+      targets: [
+        new eventtarget.LambdaFunction(cancelledBooking, {
+          retryAttempts: 5
+        })
+      ]
+    });
 
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
@@ -620,6 +747,17 @@ export class BusTicketingStack extends cdk.Stack
         'application/json': BookingModel
       },
       requestValidator: ApiRequestBodyValidator
+    });
+
+    const updateBookingApi = BookingApiRoot.addResource('update');
+    const updateBookingStatusApiIntegration = new apigw.LambdaIntegration(updateBookingStatus);
+    const updateBookingStatusApi = updateBookingApi.addResource('status');
+    updateBookingStatusApi.addMethod('POST', updateBookingStatusApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.id': true,
+        'method.request.querystring.bus_route_id': true
+      },
+      requestValidator: ApiParameterValidator
     });
   }
 }

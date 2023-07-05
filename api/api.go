@@ -91,7 +91,7 @@ func StatusInternalServerError(err error) (*events.APIGatewayProxyResponse, erro
 			"Content-Type": CONTENT_TYPE,
 		},
 		StatusCode: http.StatusInternalServerError,
-	}, err
+	}, nil
 }
 
 // StatusUnhandledRequest returns a response of an HTTP StatusNotImplemented and an error message.

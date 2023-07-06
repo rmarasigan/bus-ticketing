@@ -53,38 +53,10 @@ func getBooking(ctx context.Context, tablename, id, busRouteId string) (schema.B
 	return booking, nil
 }
 
-// GetBookingRecords checks if the DynamoDB Table is configured on the environment, and
-// returns either a specific booking record or a list of booking records.
-func GetBookingRecords(ctx context.Context, id, busRouteId string) ([]schema.Bookings, error) {
-	var (
-		bookings  []schema.Bookings
-		tablename = env.BOOKING_TABLE
-	)
+// getBookingList returns all the booking information.
+func getBookingList(ctx context.Context, tablename string) ([]schema.Bookings, error) {
+	var bookings []schema.Bookings
 
-	// Check if the DynamoDB Table is configured
-	if tablename == "" {
-		trail.Error("dynamodb BOOKING_TABLE is not configured on the environment")
-		err := errors.New("dynamodb BOOKING_TABLE environment variable is not set")
-
-		return nil, err
-	}
-
-	// ********** Fetching a specific booking record ********** //
-	if id != "" && busRouteId != "" {
-		booking, err := getBooking(ctx, tablename, id, busRouteId)
-		if err != nil {
-			return nil, err
-		}
-
-		if booking == (schema.Bookings{}) {
-			return bookings, nil
-		}
-
-		bookings = append(bookings, booking)
-		return bookings, nil
-	}
-
-	// **************** List of booking records **************** //
 	// Use the build expression to populate the DynamoDB Scan API
 	var params = &dynamodb.ScanInput{TableName: aws.String(tablename)}
 
@@ -103,6 +75,40 @@ func GetBookingRecords(ctx context.Context, id, busRouteId string) ([]schema.Boo
 	}
 
 	return bookings, nil
+}
+
+// GetBookingRecords checks if the DynamoDB Table is configured on the environment, and
+// returns either a specific booking record or a list of booking records.
+func GetBookingRecords(ctx context.Context, id, busRouteId string) ([]schema.Bookings, error) {
+	var tablename = env.BOOKING_TABLE
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BOOKING_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BOOKING_TABLE environment variable is not set")
+
+		return nil, err
+	}
+
+	// ********** Fetching a specific booking record ********** //
+	if id != "" && busRouteId != "" {
+		var bookings []schema.Bookings
+
+		booking, err := getBooking(ctx, tablename, id, busRouteId)
+		if err != nil {
+			return nil, err
+		}
+
+		if booking == (schema.Bookings{}) {
+			return bookings, nil
+		}
+
+		bookings = append(bookings, booking)
+		return bookings, nil
+	}
+
+	// **************** List of booking records **************** //
+	return getBookingList(ctx, tablename)
 }
 
 // CreateBooking checks if the DynamoDB Table is configured on the environment, and
@@ -126,6 +132,61 @@ func CreateBooking(ctx context.Context, data interface{}) error {
 	}
 
 	return nil
+}
+
+// FilterBookings checks if the DynamoDB Table is configured on the environment,
+// fetches and returns a list of bookings information.
+func FilterBookings(ctx context.Context, busId, routeId, status string) ([]schema.Bookings, error) {
+	var (
+		bookings   []schema.Bookings
+		tablename  = env.BOOKING_TABLE
+		filter     expression.ConditionBuilder
+		filterList []expression.ConditionBuilder
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BOOKING_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BOOKING_TABLE environment variable is not set")
+
+		return nil, err
+	}
+
+	// Check if the "bus_id" and "route_id" query parameters are not set and
+	// if the "status" query parameter is set to fetch ALL records.
+	if busId == "" && routeId == "" && status == "ALL" {
+		return getBookingList(ctx, tablename)
+	}
+
+	if busId != "" {
+		filterList = append(filterList, expression.Name("bus_id").Equal(expression.Value(busId)))
+	}
+
+	if routeId != "" {
+		filterList = append(filterList, expression.Name("bus_route_id").Equal(expression.Value(routeId)))
+	}
+
+	if len(filterList) > 0 {
+		filter = expression.And(expression.Name("status").Equal(expression.Value(status)), filterList[0], filterList[len(filterList)-1:]...)
+	} else {
+		filter = expression.Name("status").Equal(expression.Value(status))
+	}
+
+	result, err := FilterItems(ctx, tablename, filter)
+	if err != nil {
+		return bookings, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual bus route struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&bookings, result.Items)
+		if err != nil {
+			return bookings, err
+		}
+	}
+
+	return bookings, nil
 }
 
 // UpdateBooking checks if the DynamoDB Table is configured on the environment and

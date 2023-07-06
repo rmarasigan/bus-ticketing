@@ -107,11 +107,12 @@ func handler(ctx context.Context, event events.CloudWatchEvent) error {
 	}
 
 	// Fetch the bus route record
-	route, err := query.GetBusRoute(ctx, booking.BusRouteID, booking.BusID)
+	routes, err := query.GetBusRouteRecords(ctx, booking.BusRouteID, booking.BusID)
 	if err != nil {
 		booking.Error(err, "DynamoDBError", "failed to fetch the bus route record")
 		return err
 	}
+	route := routes[0]
 
 	// Set the email content
 	email.Content.To = append(email.Content.To, user.Email)

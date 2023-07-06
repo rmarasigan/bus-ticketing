@@ -14,21 +14,9 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
 
-// GetUserAccount checks if the DynamoDB Table is configured on the environment, and
-// fetch and returns the user account information.
-func GetUserAccount(ctx context.Context, id, username string) (schema.User, error) {
-	var (
-		user      schema.User
-		tablename = env.USERS_TABLE
-	)
-
-	// Check if the DynamoDB Table is configured
-	if tablename == "" {
-		trail.Error("dynamodb USERS_TABLE is not configured on the environment")
-		err := errors.New("dynamodb USERS_TABLE environment variable is not set")
-
-		return user, err
-	}
+// getUserAccount returns the user account information.
+func getUserAccount(ctx context.Context, tablename, id, username string) (schema.User, error) {
+	var user schema.User
 
 	// Create a composite key expression
 	key := expression.KeyAnd(expression.Key("username").Equal(expression.Value(username)), expression.Key("id").Equal(expression.Value(id)))
@@ -78,6 +66,84 @@ func GetUserAccount(ctx context.Context, id, username string) (schema.User, erro
 	}
 
 	return user, nil
+}
+
+// GetUserAccountRecords checks if the DynamoDB Table is configured on the environment, and
+// returns either the specific user account or a list of user account records.
+func GetUserAccountRecords(ctx context.Context, id, username string) ([]schema.User, error) {
+	var (
+		users     []schema.User
+		tablename = env.USERS_TABLE
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb USERS_TABLE is not configured on the environment")
+		err := errors.New("dynamodb USERS_TABLE environment variable is not set")
+
+		return users, err
+	}
+
+	// ********** Fetching a specific user account record ********** //
+	if id != "" && username != "" {
+		user, err := getUserAccount(ctx, tablename, id, username)
+		if err != nil {
+			return users, err
+		}
+
+		if user == (schema.User{}) {
+			return users, nil
+		}
+
+		users = append(users, user)
+		return users, nil
+	}
+
+	// **************** List of user account records **************** //
+	// Create a names list representing the list of item attribute names
+	// to be returned.
+	var namesList = []expression.NameBuilder{
+		expression.Name("user_type"),
+		expression.Name("first_name"),
+		expression.Name("last_name"),
+		expression.Name("username"),
+		expression.Name("email"),
+		expression.Name("mobile_number"),
+		expression.Name("address"),
+	}
+
+	// SELECT id, user_type, first_name, last_name, username, address, email, mobile_number
+	projection := expression.NamesList(expression.Name("id"), namesList...)
+
+	// Build an expression to retrieve the item from the DynamoDB
+	expr, err := expression.NewBuilder().WithProjection(projection).Build()
+	if err != nil {
+		return users, err
+	}
+
+	// Use the build expression to populate the DynamoDB Scan API
+	var params = &dynamodb.ScanInput{
+		TableName:                 aws.String(tablename),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ProjectionExpression:      expr.Projection(),
+	}
+
+	result, err := awswrapper.DynamoDBScan(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual user struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&users, result.Items)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return users, nil
 }
 
 // GetUserAccountById checks if the DynamoDB Table is configured on the environment, and

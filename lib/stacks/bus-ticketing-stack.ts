@@ -422,6 +422,36 @@ export class BusTicketingStack extends cdk.Stack
       reportBatchItemFailures: true
     }));
 
+    const getBooking = new lambda.Function(this, 'getBooking', {
+      memorySize: 1024,
+      handler: 'getBooking',
+      functionName: 'getBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/getBooking'),
+      description: 'A Lambda Function that will process API requests and fetch the booking record(s)',
+      environment: {
+        "BOOKING_TABLE": BookingTable.tableName
+      }
+    });
+    BookingTable.grantReadData(getBooking);
+    getBooking.applyRemovalPolicy(REMOVAL_POLICY);
+
+    const getCancelledBooking = new lambda.Function(this, 'getCancelledBooking', {
+      memorySize: 1024,
+      handler: 'getCancelledBooking',
+      functionName: 'getCancelledBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/getCancelledBooking'),
+      description: 'A Lambda Function that will process API reqeusts and fetch the cancelled booking record(s)',
+      environment: {
+        "BOOKING_CANCELLED_TABLE": CancelledBookingTable.tableName
+      }
+    });
+    getCancelledBooking.applyRemovalPolicy(REMOVAL_POLICY);
+    CancelledBookingTable.grantReadData(getCancelledBooking);
+
     const eventbus = new eventbridge.EventBus(this, 'bus-ticketing-booking-eventbus');
     eventbus.archive('bus-ticketing-booking-event-archive', {
       eventPattern: {
@@ -588,13 +618,7 @@ export class BusTicketingStack extends cdk.Stack
 
     const getUserApiIntegration = new apigw.LambdaIntegration(getUser);
     const getUserApi = UserAccountApiRoot.addResource('get');
-    getUserApi.addMethod('GET', getUserApiIntegration, {
-      requestParameters: {
-        'method.request.querystring.id': true,
-        'method.request.querystring.username': true
-      },
-      requestValidator: ApiParameterValidator
-    });
+    getUserApi.addMethod('GET', getUserApiIntegration);
 
     const updateUserApiIntegration = new apigw.LambdaIntegration(updateUser);
     const updateUserApi = UserAccountApiRoot.addResource('update');
@@ -622,13 +646,7 @@ export class BusTicketingStack extends cdk.Stack
 
     const getBusApiIntegration = new apigw.LambdaIntegration(getBus);
     const getBusApi = BusApiRoot.addResource('get');
-    getBusApi.addMethod('GET', getBusApiIntegration, {
-      requestParameters: {
-        'method.request.querystring.id': true,
-        'method.request.querystring.name': true
-      },
-      requestValidator: ApiParameterValidator
-    });
+    getBusApi.addMethod('GET', getBusApiIntegration);
 
     const updateBusApiIntegration = new apigw.LambdaIntegration(updateBus);
     const updateBusApi = BusApiRoot.addResource('update');
@@ -665,13 +683,7 @@ export class BusTicketingStack extends cdk.Stack
 
     const getBusUnitApiIntegration = new apigw.LambdaIntegration(getBusUnit);
     const getBusUnitApi = BusUnitApiRoot.addResource('get');
-    getBusUnitApi.addMethod('GET', getBusUnitApiIntegration, {
-      requestParameters: {
-        'method.request.querystring.code': true,
-        'method.request.querystring.bus_id': true
-      },
-      requestValidator: ApiParameterValidator
-    });
+    getBusUnitApi.addMethod('GET', getBusUnitApiIntegration);
 
     const updateBusUnitApiIntegration = new apigw.LambdaIntegration(updateBusUnit);
     const updateBusUnitApi = BusUnitApiRoot.addResource('update');
@@ -708,13 +720,7 @@ export class BusTicketingStack extends cdk.Stack
 
     const getBusRouteApiIntegration = new apigw.LambdaIntegration(getBusRoute);
     const getBusRouteApi = BusRouteApiRoot.addResource('get');
-    getBusRouteApi.addMethod('GET', getBusRouteApiIntegration, {
-      requestParameters: {
-        'method.request.querystring.id': true,
-        'method.request.querystring.bus_id': true
-      },
-      requestValidator: ApiParameterValidator
-    });
+    getBusRouteApi.addMethod('GET', getBusRouteApiIntegration);
 
     const filterBusRouteApiIntegration = new apigw.LambdaIntegration(filterBusRoute);
     const filterBusRouteApi = BusRouteApiRoot.addResource('search');
@@ -748,6 +754,14 @@ export class BusTicketingStack extends cdk.Stack
       },
       requestValidator: ApiRequestBodyValidator
     });
+
+    const getBookingApiIntegration = new apigw.LambdaIntegration(getBooking);
+    const getBookingApi = BookingApiRoot.addResource('get');
+    getBookingApi.addMethod('GET', getBookingApiIntegration);
+
+    const getCancelledBookingApiIntegration = new apigw.LambdaIntegration(getCancelledBooking);
+    const getCancelledBookingApi = BookingApiRoot.addResource('cancelled').addResource('get');
+    getCancelledBookingApi.addMethod('GET', getCancelledBookingApiIntegration);
 
     const updateBookingApi = BookingApiRoot.addResource('update');
     const updateBookingStatusApiIntegration = new apigw.LambdaIntegration(updateBookingStatus);

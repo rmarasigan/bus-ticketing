@@ -71,12 +71,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	// Fetch the existing bus route record
-	busRoute, err := query.GetBusRoute(ctx, id_query, busId_query)
+	busRoutes, err := query.GetBusRouteRecords(ctx, id_query, busId_query)
 	if err != nil {
 		route.Error(err, "DynamoDBError", "failed to fetch the bus route record")
 		return api.StatusInternalServerError(err)
 	}
 
+	busRoute := busRoutes[0]
 	if busRoute == (schema.BusRoute{}) {
 		err := errors.New("the bus route you're trying to update is non-existent")
 		route.Error(err, "APIError", "the bus route does not exist")

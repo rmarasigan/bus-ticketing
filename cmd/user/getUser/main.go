@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/rmarasigan/bus-ticketing/api"
-	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	"github.com/rmarasigan/bus-ticketing/internal/utility"
 )
@@ -45,18 +43,15 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	)
 
 	// Fetch the existing user account record
-	account, err := query.GetUserAccount(ctx, id_query, username_query)
+	accounts, err := query.GetUserAccountRecords(ctx, id_query, username_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the user account record", utility.KVP{Key: "username", Value: username_query})
 		return api.StatusInternalServerError(err)
 	}
 
-	if account == (schema.User{}) {
-		err := errors.New("the account you're trying to fetch is non-existent")
-		utility.Error(err, "APIError", "the account does not exist")
-
-		return api.StatusBadRequest(err)
+	if len(accounts) == 0 {
+		return api.StatusOK(api.Message{Custom: "no record(s) found"})
 	}
 
-	return api.StatusOK(account)
+	return api.StatusOK(accounts)
 }

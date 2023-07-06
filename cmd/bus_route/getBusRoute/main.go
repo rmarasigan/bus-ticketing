@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/rmarasigan/bus-ticketing/api"
-	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	"github.com/rmarasigan/bus-ticketing/internal/utility"
 )
@@ -47,7 +45,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	)
 
 	// Fetch the existing bus route record
-	route, err := query.GetBusRoute(ctx, id_query, busId_query)
+	routes, err := query.GetBusRouteRecords(ctx, id_query, busId_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the bus route record", utility.KVP{Key: "id", Value: id_query},
 			utility.KVP{Key: "bus_id", Value: busId_query})
@@ -55,13 +53,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return api.StatusInternalServerError(err)
 	}
 
-	if route == (schema.BusRoute{}) {
-		err := errors.New("the bus route you're trying to fetch is non-existent")
-		utility.Error(err, "APIError", "the bus route does not exist", utility.KVP{Key: "id", Value: id_query},
-			utility.KVP{Key: "bus_id", Value: busId_query})
-
-		return api.StatusBadRequest(err)
+	if len(routes) == 0 {
+		return api.StatusOK(api.Message{Custom: "no record(s) found"})
 	}
 
-	return api.StatusOK(route)
+	return api.StatusOK(routes)
 }

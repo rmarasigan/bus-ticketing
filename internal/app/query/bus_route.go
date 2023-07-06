@@ -14,21 +14,9 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
 
-// GetBusRoute checks if the DynamoDB Table is configured on the environment, and
-// fetch and returns the bus unit route information.
-func GetBusRoute(ctx context.Context, id, busId string) (schema.BusRoute, error) {
-	var (
-		route     schema.BusRoute
-		tablename = env.BUS_ROUTE_TABLE
-	)
-
-	// Check if the DynamoDB Table is configured
-	if tablename == "" {
-		trail.Error("dynamodb BUS_ROUTE_TABLE is not configured on the environment")
-		err := errors.New("dynamodb BUS_ROUTE_TABLE environment variable is not set")
-
-		return route, err
-	}
+// getBusRoute returns the bus unit route information.
+func getBusRoute(ctx context.Context, tablename, id, busId string) (schema.BusRoute, error) {
+	var route schema.BusRoute
 
 	// Create a composite key expression
 	key := expression.KeyAnd(expression.Key("id").Equal(expression.Value(id)),
@@ -82,6 +70,87 @@ func GetBusRoute(ctx context.Context, id, busId string) (schema.BusRoute, error)
 	}
 
 	return route, nil
+}
+
+// GetBusRouteRecords checks if the DynamoDB Table is configured on the environment, and
+// returns either the specific bus line route or a list of bus line route records.
+func GetBusRouteRecords(ctx context.Context, id, busId string) ([]schema.BusRoute, error) {
+	var (
+		routes    []schema.BusRoute
+		tablename = env.BUS_ROUTE_TABLE
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BUS_ROUTE_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BUS_ROUTE_TABLE environment variable is not set")
+
+		return routes, err
+	}
+
+	// ********** Fetching a specific bus route record ********** //
+	if id != "" && busId != "" {
+		route, err := getBusRoute(ctx, tablename, id, busId)
+		if err != nil {
+			return routes, err
+		}
+
+		if route == (schema.BusRoute{}) {
+			return routes, nil
+		}
+
+		routes = append(routes, route)
+		return routes, nil
+	}
+
+	// **************** List of bus route records **************** //
+	// Create a names list representing the properties of the bus route
+	// that is going to be returned
+	var namesList = []expression.NameBuilder{
+		expression.Name("bus_id"),
+		expression.Name("bus_unit_id"),
+		expression.Name("currency_code"),
+		expression.Name("rate"),
+		expression.Name("active"),
+		expression.Name("departure_time"),
+		expression.Name("arrival_time"),
+		expression.Name("from_route"),
+		expression.Name("to_route"),
+	}
+
+	// SELECT id, bus_id, bus_unit_id, currency_code, rate, active,
+	// departure_time, arrival_time, from_route, to_route
+	projection := expression.NamesList(expression.Name("id"), namesList...)
+
+	// Build an expression to retrieve the item from the DynamoDB
+	expr, err := expression.NewBuilder().WithProjection(projection).Build()
+	if err != nil {
+		return routes, err
+	}
+
+	// Use the build expression to populate the DynamoDB Scan API
+	var params = &dynamodb.ScanInput{
+		TableName:                 aws.String(tablename),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ProjectionExpression:      expr.Projection(),
+	}
+
+	result, err := awswrapper.DynamoDBScan(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual bus route struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&routes, result.Items)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return routes, nil
 }
 
 // CreateBusRoute checks if the DynamoDB Table is configured on the environment, and

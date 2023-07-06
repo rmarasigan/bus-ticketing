@@ -14,21 +14,9 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
 
-// GetBusLine checks if the DynamoDB Table is configured on the environment, and
-// fetch and returns the bus line information.
-func GetBusLine(ctx context.Context, id, name string) (schema.Bus, error) {
-	var (
-		bus       schema.Bus
-		tablename = env.BUS_TABLE
-	)
-
-	// Check if the DynamoDB Table is configured
-	if tablename == "" {
-		trail.Error("dynamodb BUS_TABLE is not configured on the environment")
-		err := errors.New("dynamodb BUS_TABLE environment variable is not set")
-
-		return bus, err
-	}
+// getBusLine returns the bus line information.
+func getBusLine(ctx context.Context, tablename, id, name string) (schema.Bus, error) {
+	var bus schema.Bus
 
 	// Create a primary key expression
 	key := expression.Key("name").Equal(expression.Value(name))
@@ -82,6 +70,83 @@ func GetBusLine(ctx context.Context, id, name string) (schema.Bus, error) {
 	}
 
 	return bus, nil
+}
+
+// GetBusLineRecords checks if the DynamoDB Table is configured on the environment, and
+// returns either the specific bus line or a list of bus line records.
+func GetBusLineRecords(ctx context.Context, id, name string) ([]schema.Bus, error) {
+	var (
+		busList   []schema.Bus
+		tablename = env.BUS_TABLE
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BUS_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BUS_TABLE environment variable is not set")
+
+		return busList, err
+	}
+
+	// ********** Fetching a specific bus record ********** //
+	if id != "" && name != "" {
+		bus, err := getBusLine(ctx, tablename, id, name)
+		if err != nil {
+			return busList, err
+		}
+
+		if bus == (schema.Bus{}) {
+			return busList, nil
+		}
+
+		busList = append(busList, bus)
+		return busList, nil
+	}
+
+	// **************** List of bus records **************** //
+	// Create a names list representing the list of item attribute names
+	// to be returned.
+	var namesList = []expression.NameBuilder{
+		expression.Name("name"),
+		expression.Name("owner"),
+		expression.Name("email"),
+		expression.Name("address"),
+		expression.Name("company"),
+		expression.Name("mobile_number"),
+	}
+
+	// SELECT id, name, owner, email, address, company, mobile_number
+	projection := expression.NamesList(expression.Name("id"), namesList...)
+
+	// Build an expression to retrieve the item from the DynamoDB
+	expr, err := expression.NewBuilder().WithProjection(projection).Build()
+	if err != nil {
+		return busList, err
+	}
+
+	// Use the build expression to populate the DynamoDB Scan API
+	var params = &dynamodb.ScanInput{
+		TableName:                 aws.String(tablename),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ProjectionExpression:      expr.Projection(),
+	}
+
+	result, err := awswrapper.DynamoDBScan(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual bus struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&busList, result.Items)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return busList, nil
 }
 
 // CreateBusLine checks if the DynamoDB Table is configured on the environment, and

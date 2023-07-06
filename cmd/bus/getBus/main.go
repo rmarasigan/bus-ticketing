@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/rmarasigan/bus-ticketing/api"
-	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	"github.com/rmarasigan/bus-ticketing/internal/utility"
 )
@@ -17,7 +15,7 @@ func main() {
 }
 
 // It receives the Amazon API Gateway event record data as input, validates the
-// request query, fetches the bus line record, and responds with a 200
+// request query, fetches the bus line record(s), and responds with a 200
 // OK HTTP Status.
 //
 // Endpoint:
@@ -44,7 +42,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	)
 
 	// Fetch the existing bus line record
-	bus, err := query.GetBusLine(ctx, id_query, name_query)
+	busList, err := query.GetBusLineRecords(ctx, id_query, name_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the bus line record", utility.KVP{Key: "id", Value: id_query},
 			utility.KVP{Key: "name", Value: name_query})
@@ -52,13 +50,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return api.StatusInternalServerError(err)
 	}
 
-	if bus == (schema.Bus{}) {
-		err := errors.New("the bus line you're trying to fetch is non-existent")
-		utility.Error(err, "APIError", "the bus line does not exist", utility.KVP{Key: "id", Value: id_query},
-			utility.KVP{Key: "name", Value: name_query})
-
-		return api.StatusBadRequest(err)
+	if len(busList) == 0 {
+		return api.StatusOK(api.Message{Custom: "no record(s) found"})
 	}
 
-	return api.StatusOK(bus)
+	return api.StatusOK(busList)
 }

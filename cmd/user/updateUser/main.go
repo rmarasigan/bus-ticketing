@@ -71,12 +71,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	// Fetch the existing user account record
-	account, err := query.GetUserAccount(ctx, id_query, username_query)
+	accounts, err := query.GetUserAccountRecords(ctx, id_query, username_query)
 	if err != nil {
 		user.Error(err, "DynamoDBError", "failed to fetch the user account record")
 		return api.StatusInternalServerError(err)
 	}
 
+	account := accounts[0]
 	if account == (schema.User{}) {
 		err := errors.New("the account you're trying to update is non-existent")
 		user.Error(err, "APIError", "the account does not exist")

@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/rmarasigan/bus-ticketing/api"
-	"github.com/rmarasigan/bus-ticketing/api/schema"
 	"github.com/rmarasigan/bus-ticketing/internal/app/query"
 	"github.com/rmarasigan/bus-ticketing/internal/utility"
 )
@@ -42,19 +40,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	)
 
 	// Fetch the existing bus unit record
-	unit, err := query.GetBusUnit(ctx, code_query, busId_query)
+	units, err := query.GetBusUnitRecords(ctx, code_query, busId_query)
 	if err != nil {
 		utility.Error(err, "DynamoDBError", "failed to fetch the bus unit record", utility.KVP{Key: "code", Value: code_query}, utility.KVP{Key: "bus_id", Value: busId_query})
 
 		return api.StatusInternalServerError(err)
 	}
 
-	if unit == (schema.BusUnit{}) {
-		err := errors.New("the bus unit you're trying to fetch is non-existent")
-		utility.Error(err, "APIError", "the bus unit does not exist", utility.KVP{Key: "code", Value: code_query}, utility.KVP{Key: "bus_id", Value: busId_query})
-
-		return api.StatusBadRequest(err)
+	if len(units) == 0 {
+		return api.StatusOK(api.Message{Custom: "no record(s) found"})
 	}
 
-	return api.StatusOK(unit)
+	return api.StatusOK(units)
 }

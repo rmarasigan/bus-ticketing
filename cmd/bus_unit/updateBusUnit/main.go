@@ -66,12 +66,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	// Fetch the existing bus unit record
-	busUnit, err := query.GetBusUnit(ctx, code_query, busId_query)
+	busUnits, err := query.GetBusUnitRecords(ctx, code_query, busId_query)
 	if err != nil {
 		unit.Error(err, "DynamoDBError", "failed to fetch the bus unit record")
 		return api.StatusInternalServerError(err)
 	}
 
+	busUnit := busUnits[0]
 	if busUnit == (schema.BusUnit{}) {
 		err := errors.New("the bus unit you're trying to update is non-existent")
 		unit.Error(err, "APIError", "the bus unit does not exist")

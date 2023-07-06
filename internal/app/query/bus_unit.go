@@ -14,21 +14,9 @@ import (
 	"github.com/rmarasigan/bus-ticketing/internal/trail"
 )
 
-// GetBusUnit checks if the DynamoDB Table is configured on the environment, and
-// fetch and returns the bus line unit information.
-func GetBusUnit(ctx context.Context, code, busId string) (schema.BusUnit, error) {
-	var (
-		unit      schema.BusUnit
-		tablename = env.BUS_UNIT
-	)
-
-	// Check if the DynamoDB Table is configured
-	if tablename == "" {
-		trail.Error("dynamodb BUS_UNIT_TABLE is not configured on the environment")
-		err := errors.New("dynamodb BUS_UNIT_TABLE environment variable is not set")
-
-		return unit, err
-	}
+// getBusUnit returns the bus line unit information.
+func getBusUnit(ctx context.Context, tablename, code, busId string) (schema.BusUnit, error) {
+	var unit schema.BusUnit
 
 	// Create a composite key expression
 	key := expression.KeyAnd(expression.Key("code").Equal(expression.Value(code)), expression.Key("bus_id").Equal(expression.Value(busId)))
@@ -74,6 +62,81 @@ func GetBusUnit(ctx context.Context, code, busId string) (schema.BusUnit, error)
 	}
 
 	return unit, nil
+}
+
+// GetBusUnitRecords checks if the DynamoDB Table is configured on the environment, and
+// returns either the specific bus line unit or a list of bus line unit records.
+func GetBusUnitRecords(ctx context.Context, code, busId string) ([]schema.BusUnit, error) {
+	var (
+		units     []schema.BusUnit
+		tablename = env.BUS_UNIT
+	)
+
+	// Check if the DynamoDB Table is configured
+	if tablename == "" {
+		trail.Error("dynamodb BUS_UNIT_TABLE is not configured on the environment")
+		err := errors.New("dynamodb BUS_UNIT_TABLE environment variable is not set")
+
+		return units, err
+	}
+
+	// ********** Fetching a specific bus unit record ********** //
+	if code != "" && busId != "" {
+		unit, err := getBusUnit(ctx, tablename, code, busId)
+		if err != nil {
+			return units, err
+		}
+
+		if unit == (schema.BusUnit{}) {
+			return units, nil
+		}
+
+		units = append(units, unit)
+		return units, nil
+	}
+
+	// **************** List of bus unit records **************** //
+	// Create a names list representing the list of item attribute names
+	// to be returned.
+	var namesList = []expression.NameBuilder{
+		expression.Name("bus_id"),
+		expression.Name("active"),
+		expression.Name("min_capacity"),
+		expression.Name("max_capacity"),
+	}
+
+	// SELECT code, bus_id, active, min_capacity, max_capacity
+	projection := expression.NamesList(expression.Name("code"), namesList...)
+
+	// Build an expression to retrieve the item from the DynamoDB
+	expr, err := expression.NewBuilder().WithProjection(projection).Build()
+	if err != nil {
+		return units, err
+	}
+
+	// Use the build expression to populate the DynamoDB Scan API
+	var params = &dynamodb.ScanInput{
+		TableName:                 aws.String(tablename),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		ProjectionExpression:      expr.Projection(),
+	}
+
+	result, err := awswrapper.DynamoDBScan(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Count > 0 {
+		// Unmarshal a map into actual bus unit struct which the front-end can
+		// understand as a JSON.
+		err = awswrapper.DynamoDBUnmarshalListOfMaps(&units, result.Items)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return units, nil
 }
 
 // CreateBusUnit checks if the DynamoDB Table is configured on the environment, and

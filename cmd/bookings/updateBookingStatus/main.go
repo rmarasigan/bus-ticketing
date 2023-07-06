@@ -52,13 +52,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	// ***************** Fetch and validate booking record ***************** //
 	// ********************************************************************* //
 	// 1. Fetch the existing booking record
-	record, err := query.GetBooking(ctx, id_query, routeId_query)
+	records, err := query.GetBookingRecords(ctx, id_query, routeId_query)
 	if err != nil {
 		booking.Error(err, "DynamoDBError", "failed to fetch the booking record")
 		return api.StatusInternalServerError(err)
 	}
 
 	// 2. Check if there is an existing record
+	record := records[0]
 	if record == (schema.Bookings{}) {
 		err := errors.New("the booking record you're trying to update is non-existent")
 		booking.Error(err, "APIError", "the booking record does not exist")

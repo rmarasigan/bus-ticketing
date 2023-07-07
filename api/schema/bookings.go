@@ -87,7 +87,7 @@ func (booking Bookings) IsEmptyPayload(payload string) error {
 // is an invalid booking status, it will return an error message.
 //
 // Valid Booking Status:
-//  PENDING, WAITING_FOR_PAYMENT, CONFIRMED, CANCELLED
+//  PENDING, CONFIRMED, CANCELLED
 func (booking Bookings) IsValidStatus() error {
 	switch booking.Status {
 	case booking.Status.Pending(),

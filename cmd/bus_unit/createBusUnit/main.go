@@ -25,13 +25,15 @@ func main() {
 //  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/create
 //
 // Sample API Payload:
-// 	{
-// 		"code": "RLBSWV1_0606",
+// 	[
+//	 {
 // 		"bus_id": "RLBSW-856996",
+// 		"code": "RLBSWV1_0606",
 // 		"active": true,
 // 		"min_capacity": 40,
 // 		"max_capacity": 50
-// 	}
+//	 }
+// 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		unitList    []schema.BusUnit

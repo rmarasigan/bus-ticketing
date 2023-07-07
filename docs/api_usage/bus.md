@@ -197,13 +197,14 @@ To create a new bus instance, you must initialize an array of objects representi
 ```
 
 ### Get Bus Information
-When retrieving the bus information, the `id` and `name` query parameters must be present in the URL. These parameters identify which bus information should be returned. It will return a representation of specific bus information.
+When retrieving the specific bus information, the `id` and `name` query parameters must be present in the URL. These parameters identify which bus information should be returned. It will either return a representation of a specific bus information or a list of bus information.
 
 **Method**: `GET`
 
-**Endpoint**: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/get?id=xxxxxx&name=xxxxxx
+**Endpoint**: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/get
 
-#### Query Parameters
+#### Specific Bus
+**Query Parameters**
 <table>
   <tr>
     <th>Parameter</th>
@@ -231,15 +232,17 @@ When retrieving the bus information, the `id` and `name` query parameters must b
 
 #### Sample Response
 ```json
-{
-  "id": "BCBSCMPN-875011",
-  "name": "Blue Horizon",
-  "owner": "John Doe",
-  "email": "john.doe@example.com",
-  "address": "123 Main Street, City",
-  "company": "ABC Bus Company",
-  "mobile_number": "123-456-7890"
-}
+[
+  {
+    "id": "BCBSCMPN-875011",
+    "name": "Blue Horizon",
+    "owner": "John Doe",
+    "email": "john.doe@example.com",
+    "address": "123 Main Street, City",
+    "company": "ABC Bus Company",
+    "mobile_number": "123-456-7890"
+  }
+]
 ```
 
 ### Filter Bus Record

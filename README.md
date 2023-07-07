@@ -5,6 +5,7 @@ A mini-project that lets the passenger create an account, book a bus ticket, and
 ## Architecture
 * [General Architecture](docs/architecture/general.md)
 * [Create Booking Architecture](docs/architecture/create-booking.md)
+* [Update Booking Status Architecture](docs/architecture/update-booking-status.md)
 
 ## API Usage and Specification
 * [User Schema API](docs/api_usage/user.md)

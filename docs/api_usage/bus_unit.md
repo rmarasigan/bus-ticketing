@@ -173,13 +173,14 @@ To create a new bus unit instance, you must initialize an array of objects repre
 ```
 
 ### Get Bus Unit Record
-When retrieving the bus unit record, the `code` and `bus_id` query parameters must be present in the URL. These parameters identify which bus unit record should be returned. It will return a representation of specific bus unit record.
+When retrieving the specific bus unit record, the `code` and `bus_id` query parameters must be present in the URL. These parameters identify which bus unit record should be returned. It will either return a representation of a specific bus unit record or a list of bus unit records.
 
 **Method**: `GET`
 
-**Endpoint**: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/get?code=xxxxx&bus_id=xxxxx
+**Endpoint**: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/get
 
-#### Query Parameters
+#### Specific Bus Unit
+**Query Parameters**
 <table>
   <tr>
     <th>Parameter</th>
@@ -207,13 +208,15 @@ When retrieving the bus unit record, the `code` and `bus_id` query parameters mu
 
 #### Sample Response
 ```json
-{
-  "bus_id": "BCBSCMPN-875011",
-  "code": "BCBSCMPNBUS002",
-  "active": true,
-  "min_capacity": 30,
-  "max_capacity": 60
-}
+[
+  {
+    "bus_id": "BCBSCMPN-875011",
+    "code": "BCBSCMPNBUS002",
+    "active": true,
+    "min_capacity": 30,
+    "max_capacity": 60
+  }
+]
 ```
 
 ### Filter Bus Unit Record

@@ -17,7 +17,7 @@ The User API Schema contains the user account information. In this module, it wi
       <code>id</code>
     </td>
     <td>string</td>
-    <td>The sort key.</td>
+    <td>The unique user ID and the sort key.</td>
   </tr>
   <tr>
     <td>
@@ -304,13 +304,14 @@ Response:
 ```
 
 ### Get user account
-When retrieving the user account information, the `id` and `username` query parameters must be present in the URL. These parameters identify which user account should be returned. It will return a representation of an account that is related to the user.
+When retrieving the specific user account information, the `id` and `username` query parameters must be present in the URL. These parameters identify which user account should be returned. It will either return a representation of a specific an account that is related to the user or a list of user account.
 
 **Method**: `GET`
 
-**Endpoint**: https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/get?id=xxxxx&username=xxxxx
+**Endpoint**: https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/get
 
-#### Query Parameters
+#### Specific User Account
+**Query Parameters**
 <table>
   <tr>
     <th>Parameter</th>
@@ -338,16 +339,18 @@ When retrieving the user account information, the `id` and `username` query para
 
 #### Sample Response
 ```json
-{
-  "id": "ADMN-878495",
-  "user_type": "ADMIN",
-  "first_name": "Emily",
-  "last_name": "Davis",
-  "username": "emilydavis",
-  "address": "321 Cedar Road",
-  "email": "emilydavis@example.com",
-  "mobile_number": "(407) 435-6841"
-}
+[
+  {
+    "id": "ADMN-878495",
+    "user_type": "ADMIN",
+    "first_name": "Emily",
+    "last_name": "Davis",
+    "username": "emilydavis",
+    "address": "321 Cedar Road",
+    "email": "emilydavis@example.com",
+    "mobile_number": "(407) 435-6841"
+  }
+]
 ```
 
 ### Update user account

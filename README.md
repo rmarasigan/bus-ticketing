@@ -1,6 +1,6 @@
 # Bus Ticketing
 
-A mini-project that lets the passenger create an account, book a bus ticket, and schedule the trip. This project uses some AWS services such as API Gateway, DynamoDB, Lambda, SQS, and EventBridge. It also documents how this project is created. This serves as a familiarization for the AWS services.
+A mini-project that lets the passenger create an account, book a bus ticket and schedule the trip. This project uses some AWS services such as API Gateway, DynamoDB, Lambda, SQS, and EventBridge. It also documents how this project is created. This serves as a familiarization for the AWS services.
 
 ## Architecture
 * [General Architecture](docs/architecture/general.md)

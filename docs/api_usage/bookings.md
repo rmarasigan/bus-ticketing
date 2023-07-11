@@ -276,7 +276,7 @@ To create a new booking instance, you need to instantiate an object that represe
 ```
 
 ### Get Booking Records
-When retrieving the specific booking record, the `booking_id` query parameter must be present in the URL. This parameter identify which information should be returned. It will either return a representation of a specific cancelled booking record or a list of cancelled booking record.
+When retrieving the specific booking record, the `id` and `bus_route_id` query parameters must be present in the URL. These parameters identify which information should be returned. It will either return a representation of a specific booking record or a list of booking record.
 
 **Method**: `GET`
 
@@ -355,7 +355,7 @@ When retrieving the specific cancelled booking record, the `booking_id` query pa
     </td>
     <td>string</td>
     <td>The unique booking ID.</td>
-    <td>❌</td>
+    <td>✅</td>
   </tr>
 </table>
 
@@ -539,6 +539,7 @@ Payload:
 </table>
 
 **Sample Request**
+
 Payload:
 ```json
 {

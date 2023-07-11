@@ -97,6 +97,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	var update = expression.Set(expression.Name("first_name"), expression.Value(account.FirstName)).
 		Set(expression.Name("last_name"), expression.Value(account.LastName)).
 		Set(expression.Name("address"), expression.Value(account.Address)).
+		Set(expression.Name("email"), expression.Value(account.Email)).
 		Set(expression.Name("mobile_number"), expression.Value(account.MobileNumber))
 
 	result, err := query.UpdateUserAcccount(ctx, compositKey, update)

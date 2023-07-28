@@ -24,26 +24,27 @@ func main() {
 // valid or not, updates the user account’s last login, and responds with a 200
 // OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/login
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/login
 //
 // Sample API Payload:
 // 	{
-// 		"username": "j.doe",
-// 		"password": "j.doe1234"
+// 		"username": "emilydavis",
+// 		"password": "passwordabc"
 // 	}
 //
 // Sample API Response:
-// 	{
-// 		"id": "CSTMR-855048",
-// 		"user_type": "CUSTOMER",
-// 		"first_name": "John",
-// 		"last_name": "Doe",
-// 		"username": "j.doe",
-// 		"address": "South Calorina",
-// 		"email": "j.doe@outlook.com",
-// 		"mobile_number": "11223344556"
-// 	}
+//	{
+//	  "id": "ADMN-878495",
+//	  "user_type": "ADMIN",
+//	  "first_name": "Emily",
+//	  "last_name": "Davis",
+//	  "username": "emilydavis",
+//	  "address": "321 Cedar Road",
+//	  "email": "emilydavis@example.com",
+//	  "mobile_number": "4449876543"
+//	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var user = new(schema.User)
 

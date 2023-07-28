@@ -23,12 +23,13 @@ func main() {
 // request query and body, updates the user account’s information/record and responds
 // with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/update?id=xxxxx&username=xxxxx
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/update?id=xxxxx&username=xxxxx
 //
 // Sample API Params:
-//  id=CSTMR-855048
-// 	username=j.doe
+//  id=ADMN-878495
+//  username=passwordabc
 //
 // Sample API Payload:
 // 	{
@@ -38,17 +39,16 @@ func main() {
 //
 // Sample API Response:
 // 	{
-// 		"id": "CSTMR-855048",
-// 		"user_type": "CUSTOMER",
-// 		"first_name": "John",
-// 		"last_name": "Doe",
-// 		"username": "j.doe",
-// 		"password": "j.doe1234",
-// 		"address": "Långbro, Stockholm",
-// 		"email": "j.doe@outlook.com",
-// 		"mobile_number": "0586-4404205",
-// 		"date_created": "1685504877",
-// 		"last_login": "01 Jun 2023 03:58:19"
+// 	  "id": "ADMN-878495",
+// 	  "user_type": "ADMIN",
+// 	  "first_name": "Emily",
+// 	  "last_name": "Davis",
+// 	  "username": "emilydavis",
+// 	  "password": "passwordabc",
+// 	  "address": "Långbro, Stockholm",
+// 	  "email": "emilydavis@example.com",
+// 	  "mobile_number": "0586-4404205",
+// 	  "date_created": "1687849585"
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (

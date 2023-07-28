@@ -102,13 +102,13 @@ func (route *BusRoute) SetValues() {
 // BusRouteFilter contains the fields of a bus route
 // that can be used for filtering.
 type BusRouteFilter struct {
-	BusID     string
-	BusUnitID string
-	Active    *bool
-	Departure string
-	Arrival   string
-	FromRoute string
-	ToRoute   string
+	BusID     string // The unique Bus ID
+	BusUnitID string // The Bus Unit ID for the identification of specific bus unit route
+	Active    *bool  // Defines if the bus is available for that route
+	Departure string // Expected departure time on the starting point and in 24-hour format
+	Arrival   string // Expected arrival time on the destination and in 24-hour format
+	FromRoute string // Indicating the starting point of a bus
+	ToRoute   string // Indicating the destination of bus
 }
 
 // SetFilter sets and returns the fields of the bus route

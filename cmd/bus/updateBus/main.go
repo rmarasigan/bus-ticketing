@@ -23,12 +23,13 @@ func main() {
 // request query and body, updates the bus line's information/record and responds
 // with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/update?id=xxxxx&name=xxxxx
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/update?id=xxxxx&name=xxxxx
 //
 // Sample API Params:
-//  id=RLBSW-856996
-// 	name=Thunder Rail Bus Line
+//  id=BCBSCMPN-875011
+//  name=Blue Horizon
 //
 // Sample API Payload:
 // 	{
@@ -38,14 +39,14 @@ func main() {
 //
 // Sample API Response:
 // 	{
-// 		"id": "RLBSW-856996",
-// 		"name": "Thunder Rail Bus Line",
-// 		"owner": "Thando Oyibo Emmett",
-// 		"email": "thando.emmet@outlook.com",
-// 		"address": "Långbro, Stockholm",
-// 		"company": "Rail Bus Way",
-// 		"mobile_number": "0567-8809105",
-// 		"date_created": "1685699666"
+// 	  "id": "BCBSCMPN-875011",
+// 	  "name": "Blue Horizon",
+// 	  "owner": "Daniel Martinez",
+// 	  "email": "daniel.martinez@example.com",
+// 	  "address": "Långbro, Stockholm",
+// 	  "company": "ABC Bus Company",
+// 	  "mobile_number": "0567-8809105",
+// 	  "date_created": "1687501112"
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (

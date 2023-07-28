@@ -20,6 +20,23 @@ func main() {
 	lambda.Start(handler)
 }
 
+// It receives the Amazon API Gateway event record data as input, validates the
+// request query and body, updates the booking record and responds with a 200 OK
+// HTTP Status without body.
+//
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-route/update?id=xxxxx&bus_route_id=xxxxx
+//
+// Sample API Params:
+//  id=bd866a7e-34cd-4ea1-8411-5351a6b76ffd
+//  bus_route_id=RTBRTC15001900884691
+//
+// Sample API Payload:
+// 	{
+// 	  "status": "CONFIRMED",
+// 	  "seat_number": "23,24,25"
+// 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		booking       schema.Bookings

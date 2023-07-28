@@ -23,12 +23,13 @@ func main() {
 // request query and body, updates the bus route record and responds with a 200
 // OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-route/update?id=xxxxx&bus_id=xxxxx
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-route/update?id=xxxxx&bus_id=xxxxx
 //
 // Sample API Params:
 //  id=RTRTB15001900880101
-// 	bus_id=SNRSBSS-875011
+//  bus_id=SNRSBSS-875011
 //
 // Sample API Payload:
 // 	{
@@ -37,17 +38,17 @@ func main() {
 //
 // Sample API Response:
 // 	{
-// 		"id": "RTRTB15001900880101",
-// 		"bus_id": "SNRSBSS-875011",
-// 		"bus_unit_id": "SNRSBSSBUS002",
-// 		"currency_code": "PHP",
-// 		"rate": 90,
-// 		"active": false,
-// 		"departure_time": "15:00",
-// 		"arrival_time": "19:00",
-// 		"from_route": "Route A",
-// 		"to_route": "Route B",
-// 		"date_created": "1688010114"
+// 	  "id": "RTRTB15001900880101",
+// 	  "bus_id": "SNRSBSS-875011",
+// 	  "bus_unit_id": "SNRSBSSBUS002",
+// 	  "currency_code": "PHP",
+// 	  "rate": 90,
+// 	  "active": false,
+// 	  "departure_time": "15:00",
+// 	  "arrival_time": "19:00",
+// 	  "from_route": "Route A",
+// 	  "to_route": "Route B",
+// 	  "date_created": "1688010114"
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (

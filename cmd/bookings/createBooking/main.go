@@ -17,6 +17,24 @@ func main() {
 	lambda.Start(handler)
 }
 
+// It receives the Amazon API Gateway event record data as input, validates the
+// request body, sends the validated request body to the SQS, and responds with
+// a 200 OK HTTP Status.
+//
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bookings/create
+//
+// Sample API Payload:
+// 	{
+// 	  "user_id": "ADMN-878495",
+// 	  "bus_id": "BCBSCMPN-884690",
+// 	  "bus_route_id": "RTBRTC15001900884691",
+// 	  "seat_number": "23,24,25,26",
+// 	  "status": "PENDING",
+// 	  "timestamp": "2023-07-01 10:30",
+// 	  "travel_date": "2023-07-06 19:30"
+// 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		booking schema.Bookings

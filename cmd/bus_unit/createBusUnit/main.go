@@ -21,18 +21,19 @@ func main() {
 // request body, saves the validated request body to the DynamoDB Table, and
 // responds with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/create
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/create
 //
 // Sample API Payload:
 // 	[
-//	 {
-// 		"bus_id": "RLBSW-856996",
-// 		"code": "RLBSWV1_0606",
-// 		"active": true,
-// 		"min_capacity": 40,
-// 		"max_capacity": 50
-//	 }
+// 	  {
+// 	    "bus_id": "BCBSCMPN-875011",
+// 	    "code": "BCBSCMPNBUS001",
+// 	    "active": true,
+// 	    "min_capacity": 30,
+// 	    "max_capacity": 60
+// 	  }
 // 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (

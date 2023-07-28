@@ -21,16 +21,17 @@ func main() {
 // request body, saves the validated request body to the DynamoDB Table, and
 // responds with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-route/create
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-route/create
 //
 // Sample API Payload:
 // 	{
 // 	  "rate": 120,
 // 	  "active": true,
 // 	  "currency_code": "PHP",
-// 	  "bus_id": "BCBSCMPN-875011",
-// 	  "bus_unit_id": "BCBSCMPNBUS001",
+// 	  "bus_id": "SNRSBSS-875011",
+// 	  "bus_unit_id": "SNRSBSSBUS002",
 // 	  "departure_time": "15:00",
 // 	  "arrival_time": "17:00",
 // 	  "from_route": "Route A",

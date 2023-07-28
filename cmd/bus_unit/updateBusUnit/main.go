@@ -23,12 +23,13 @@ func main() {
 // request query and body, updates the bus unit's record and responds with a 200
 // OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/update?code=xxxxx&bus_id=xxxxx
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/update?code=xxxxx&bus_id=xxxxx
 //
 // Sample API Params:
-//  bus_id=RLBSW-856996
-// 	code=RLBSWV1_0606
+//  bus_id=BCBSCMPN-875011
+//  code=BCBSCMPNBUS002
 //
 // Sample API Payload:
 // 	{
@@ -37,12 +38,12 @@ func main() {
 //
 // Sample API Response:
 // 	{
-// 		"bus_id": "RLBSW-856996",
-// 		"code": "RLBSWV1_0606",
-// 		"active": false,
-// 		"min_capacity": 40,
-// 		"max_capacity": 50,
-// 		"date_created": "1686039674"
+// 	  "bus_id": "BCBSCMPN-875011",
+// 	  "code": "BCBSCMPNBUS002",
+// 	  "active": false,
+// 	  "min_capacity": 30,
+// 	  "max_capacity": 60,
+// 	  "date_created": "1687501761"
 // 	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (

@@ -21,8 +21,9 @@ func main() {
 // request body, saves the validated request body to the DynamoDB Table, and
 // responds with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/create
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/create
 //
 // Sample API Payload:
 // 	[

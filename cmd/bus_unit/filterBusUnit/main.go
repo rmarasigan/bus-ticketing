@@ -19,21 +19,32 @@ func main() {
 // It receives the Amazon API Gateway event record as input, fetches the
 // bus unit's record, and responds with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/search?bus_id=xxxxxx
+// Method: GET
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus-unit/search?bus_id=xxxxxx
 //
 // Sample API Params:
-//  bus_id=RLBSW-856996
+//  bus_id=BCBSCMPN-875011
 //
 // Sample API Response:
-// 	{
-// 		"bus_id": "RLBSW-856996",
-// 		"code": "RLBSWV1_0606",
-// 		"active": true,
-// 		"min_capacity": 40,
-// 		"max_capacity": 50,
-//		"date_created": "1687501761"
-// 	}
+// 	[
+// 	  {
+// 	    "bus_id": "BCBSCMPN-875011",
+// 	    "code": "BCBSCMPNBUS001",
+// 	    "active": true,
+// 	    "min_capacity": 30,
+// 	    "max_capacity": 60,
+// 	    "date_created": "1687501761"
+// 	  },
+// 	  {
+// 	    "bus_id": "BCBSCMPN-875011",
+// 	    "code": "BCBSCMPNBUS003",
+// 	    "active": true,
+// 	    "min_capacity": 45,
+// 	    "max_capacity": 70,
+// 	    "date_created": "1687501761"
+// 	  }
+// 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		active       *bool

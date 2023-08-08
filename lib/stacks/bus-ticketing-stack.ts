@@ -439,21 +439,12 @@ export class BusTicketingStack extends cdk.Stack
 
     const filterBooking = new lambda.Function(this, 'filterBooking', {
       memorySize: 1024,
-<<<<<<< HEAD
       handler: 'bootstrap',
       functionName: 'getCancelledBooking',
       timeout: cdk.Duration.seconds(60),
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset('cmd/bookings/getCancelledBooking'),
       description: 'A Lambda Function that will process API reqeusts and fetch the cancelled booking record(s)',
-=======
-      handler: 'filterBooking',
-      functionName: 'filterBooking',
-      runtime: lambda.Runtime.GO_1_X,
-      timeout: cdk.Duration.seconds(60),
-      code: lambda.Code.fromAsset('cmd/bookings/filterBooking'),
-      description: 'A Lambda Function that will process API requests and filter the booking record depending on the passed query',
->>>>>>> 6b86c3848f526f92ab8a820d9fae1979fcbb44f2
       environment: {
         "BOOKING_TABLE": BookingTable.tableName
       }

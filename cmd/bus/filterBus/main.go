@@ -17,24 +17,27 @@ func main() {
 // It receives the Amazon API Gateway event record data as input, fetches the
 // bus line's record, and responds with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/search?name=xxxxxx&company=xxxxxx
+// Method: GET
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bus/search?name=xxxxxx&company=xxxxxx
 //
 // Sample API Params:
-// 	name=Thunder Rail Bus Line
-//  company=Rail Bus Way
+//  name=Yellow Sunshine
+//  company=Transit Bus Co
 //
 // Sample API Response:
-// 	{
-// 		"id": "RLBSW-856996",
-// 		"name": "Thunder Rail Bus Line",
-// 		"owner": "Thando Oyibo Emmett",
-// 		"email": "thando.emmet@outlook.com",
-// 		"address": "1986 Bogisich Junctions, Hamillhaven, Kansas",
-// 		"company": "Rail Bus Way",
-// 		"mobile_number": "+1-335-908-1432"
-// 		"date_created": "1685699666"
-// 	}
+// 	[
+// 	  {
+// 	    "id": "TRNSTBSC-875011",
+// 	    "name": "Yellow Sunshine",
+// 	    "owner": "Melissa Anderson",
+// 	    "email": "melissa.anderson@example.com",
+// 	    "address": "741 Oak Avenue, Suburb",
+// 	    "company": "Transit Bus Co",
+// 	    "mobile_number": "999-333-7777",
+// 	    "date_created": "1687501112"
+// 	  }
+// 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		name_query    = request.QueryStringParameters["name"]

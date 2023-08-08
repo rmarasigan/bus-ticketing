@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -118,7 +119,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) error {
 	email.Content.To = append(email.Content.To, user.Email)
 	email.Content.Subject = fmt.Sprintf("CANCELLED BOOKING: %s to %s [%s]", route.FromRoute, route.ToRoute, booking.TravelDate)
 
-	if user.UserType == "ADMIN" {
+	if strings.HasPrefix(booking.Cancelled.CancelledBy, "ADMN") {
 		email.Content.Message = template.CancelledBooking(user, route, booking, email.CustomerSupport)
 	} else {
 		email.Content.Message = template.CustomerCancelledBooking(user, route, booking, email.CustomerSupport)

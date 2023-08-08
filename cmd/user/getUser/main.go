@@ -15,27 +15,30 @@ func main() {
 }
 
 // It receives the Amazon API Gateway event record data as input, validates the
-// request query, fetches the user account record, and responds with
+// request query, fetches the user account record(s), and responds with
 // a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/get?id=xxxxx&username=xxxxx
+// Method: GET
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/account/get
 //
 // Sample API Params:
-//  id=CSTMR-855048
-// 	username=j.doe
+//  id=ADMN-878495
+//  username=passwordabc
 //
 // Sample API Response:
-// 	{
-// 		"id": "CSTMR-855048",
-// 		"user_type": "CUSTOMER",
-// 		"first_name": "John",
-// 		"last_name": "Doe",
-// 		"username": "j.doe",
-// 		"address": "Långbro, Stockholm",
-// 		"email": "j.doe@outlook.com",
-// 		"mobile_number": "0586-4404205"
-// 	}
+// 	[
+// 	  {
+// 	    "id": "ADMN-878495",
+// 	    "user_type": "ADMIN",
+// 	    "first_name": "Emily",
+// 	    "last_name": "Davis",
+// 	    "username": "emilydavis",
+// 	    "address": "321 Cedar Road",
+// 	    "email": "emilydavis@example.com",
+// 	    "mobile_number": "(407) 435-6841"
+// 	  }
+// 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
 		id_query       = request.QueryStringParameters["id"]

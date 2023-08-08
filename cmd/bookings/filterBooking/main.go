@@ -14,17 +14,15 @@ func main() {
 	lambda.Start(handler)
 }
 
-// It receives the Amazon API Gateway event record data as input, validates the
-// request query, fetches the booking record(s), and responds with a 200
-// OK HTTP Status.
+// It receives the Amazon API Gateway event record data as input, retrieves a
+// list of booking records, and responds with a 200 OK HTTP Status.
 //
 // Method: GET
 //
-// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bookings/get
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/bookings/search?status=xxxxxx
 //
 // Sample API Params:
-//  id=bd866a7e-34cd-4ea1-8411-5351a6b76ffd
-//  bus_route_id=RTBRTC15001900884691
+//  status=PENDING
 //
 // Sample API Response:
 // 	[
@@ -49,18 +47,15 @@ func main() {
 // 	]
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var (
-		id_query         = request.QueryStringParameters["id"]
-		busRouteId_query = request.QueryStringParameters["bus_route_id"]
+		status_query  = request.QueryStringParameters["status"]
+		busId_query   = request.QueryStringParameters["bus_id"]
+		routeId_query = request.QueryStringParameters["route_id"]
 	)
 
-	bookings, err := query.GetBookingRecords(ctx, id_query, busRouteId_query)
+	bookings, err := query.FilterBookings(ctx, busId_query, routeId_query, status_query)
 	if err != nil {
-		utility.Error(err, "DynamoDBError", "failed to fetch the booking record")
+		utility.Error(err, "DynamoDBError", "failed to filter the bookings")
 		return api.StatusInternalServerError(err)
-	}
-
-	if len(bookings) == 0 {
-		return api.StatusOK(api.Message{Custom: "no record(s) found"})
 	}
 
 	return api.StatusOK(bookings)

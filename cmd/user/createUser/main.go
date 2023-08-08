@@ -21,20 +21,21 @@ func main() {
 // request body, saves the validated request body to the DynamoDB Table, and
 // responds with a 200 OK HTTP Status.
 //
-// Endpoint:
-//  https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/create
+// Method: POST
+//
+// Endpoint: https://{api_id}.execute-api.{region}.amazonaws.com/prod/user/create
 //
 // Sample API Payload:
-// 	{
-// 		"user_type": "2",
-// 		"username": "j.doe",
-// 		"first_name": "John",
-// 		"last_name": "Doe",
-// 		"password": "j.doe1234",
-// 		"address": "South Calorina",
-// 		"email": "j.doe@outlook.com",
-// 		"mobile_number": "11223344556"
-// 	}
+//	{
+//	  "user_type": "1",
+//	  "first_name": "Emily",
+//	  "last_name": "Davis",
+//	  "username": "emilydavis",
+//	  "password": "passwordabc",
+//	  "address": "321 Cedar Road",
+//	  "email": "emilydavis@example.com",
+//	  "mobile_number": "4449876543"
+//	}
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var user = new(schema.User)
 

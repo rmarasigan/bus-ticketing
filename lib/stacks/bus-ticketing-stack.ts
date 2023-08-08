@@ -437,20 +437,29 @@ export class BusTicketingStack extends cdk.Stack
     BookingTable.grantReadData(getBooking);
     getBooking.applyRemovalPolicy(REMOVAL_POLICY);
 
-    const getCancelledBooking = new lambda.Function(this, 'getCancelledBooking', {
+    const filterBooking = new lambda.Function(this, 'filterBooking', {
       memorySize: 1024,
+<<<<<<< HEAD
       handler: 'bootstrap',
       functionName: 'getCancelledBooking',
       timeout: cdk.Duration.seconds(60),
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset('cmd/bookings/getCancelledBooking'),
       description: 'A Lambda Function that will process API reqeusts and fetch the cancelled booking record(s)',
+=======
+      handler: 'filterBooking',
+      functionName: 'filterBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/filterBooking'),
+      description: 'A Lambda Function that will process API requests and filter the booking record depending on the passed query',
+>>>>>>> 6b86c3848f526f92ab8a820d9fae1979fcbb44f2
       environment: {
-        "BOOKING_CANCELLED_TABLE": CancelledBookingTable.tableName
+        "BOOKING_TABLE": BookingTable.tableName
       }
     });
-    getCancelledBooking.applyRemovalPolicy(REMOVAL_POLICY);
-    CancelledBookingTable.grantReadData(getCancelledBooking);
+    BookingTable.grantReadData(filterBooking);
+    filterBooking.applyRemovalPolicy(REMOVAL_POLICY);
 
     const eventbus = new eventbridge.EventBus(this, 'bus-ticketing-booking-eventbus');
     eventbus.archive('bus-ticketing-booking-event-archive', {
@@ -555,6 +564,21 @@ export class BusTicketingStack extends cdk.Stack
         })
       ]
     });
+
+    const getCancelledBooking = new lambda.Function(this, 'getCancelledBooking', {
+      memorySize: 1024,
+      handler: 'getCancelledBooking',
+      functionName: 'getCancelledBooking',
+      runtime: lambda.Runtime.GO_1_X,
+      timeout: cdk.Duration.seconds(60),
+      code: lambda.Code.fromAsset('cmd/bookings/getCancelledBooking'),
+      description: 'A Lambda Function that will process API reqeusts and fetch the cancelled booking record(s)',
+      environment: {
+        "BOOKING_CANCELLED_TABLE": CancelledBookingTable.tableName
+      }
+    });
+    getCancelledBooking.applyRemovalPolicy(REMOVAL_POLICY);
+    CancelledBookingTable.grantReadData(getCancelledBooking);
 
     // ******************** API Gateway ******************** //
     const api = new apigw.RestApi(this, 'bus-ticketing-api', {
@@ -758,6 +782,15 @@ export class BusTicketingStack extends cdk.Stack
     const getBookingApiIntegration = new apigw.LambdaIntegration(getBooking);
     const getBookingApi = BookingApiRoot.addResource('get');
     getBookingApi.addMethod('GET', getBookingApiIntegration);
+    
+    const filterBookingApiIntegration = new apigw.LambdaIntegration(filterBooking);
+    const filterBookingApi = BookingApiRoot.addResource('search');
+    filterBookingApi.addMethod('GET', filterBookingApiIntegration, {
+      requestParameters: {
+        'method.request.querystring.status': true
+      },
+      requestValidator: ApiParameterValidator
+    });
 
     const getCancelledBookingApiIntegration = new apigw.LambdaIntegration(getCancelledBooking);
     const getCancelledBookingApi = BookingApiRoot.addResource('cancelled').addResource('get');

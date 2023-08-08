@@ -21,9 +21,9 @@ clean:
 	for base in $(CMD_DIRS); do \
 		dirname=$$(basename $$base); \
 		cd $(BASE_PATH)/$$base && \
-		if [ -f $(BASE_PATH)/$$base/$$dirname ]; then \
+		if [ -f $(BASE_PATH)/$$base/bootstrap ]; then \
 			echo "- $$dirname"; \
-			rm $$dirname; \
+			rm bootstrap; \
 		fi; \
 	done
 	echo "\n"
@@ -36,7 +36,7 @@ compile_all: clean
 		if [ -s main.go ]; then \
 			echo "- $$dirname"; \
 			cd $(BASE_PATH)/$$base && \
-			$(GO_COMPILE) -o $$dirname main.go; \
+			$(GO_COMPILE) -o bootstrap main.go; \
 		fi; \
 	done
 	echo "\n"

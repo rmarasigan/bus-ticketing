@@ -101,7 +101,8 @@ export class BusTicketingStack extends cdk.Stack
       sortKey: {
         name: 'bus_route_id',
         type: dynamodb.AttributeType.STRING
-      }
+      },
+      removalPolicy: REMOVAL_POLICY
     });
 
     // 6. Create a DynamoDB Table that will contain the Cancelled Booking information

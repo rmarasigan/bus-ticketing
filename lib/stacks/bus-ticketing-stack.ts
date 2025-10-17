@@ -124,7 +124,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'createUser',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/user/createUser'),
       description: 'A Lambda Function that will process API requests and create a new user account',
       environment: {
@@ -139,7 +139,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'login',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/user/login'),
       description: 'A Lambda Function that will process API requests and login the user account',
       environment: {
@@ -154,7 +154,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'getUser',      
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/user/getUser'),
       description: 'A Lambda Function that will process API requests and get the user account record',
       environment: {
@@ -169,7 +169,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'updateUser',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/user/updateUser'),
       description: 'A Lambda Function that will process API requests and update the user account record',
       environment: {
@@ -185,7 +185,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'createBus',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus/createBus'),
       description: 'A Lambda Function that will process API requests and create a new bus line record',
       environment: {
@@ -200,7 +200,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'getBus',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus/getBus'),
       description: 'A Lambda Function that will process API requets and returns the bus line record',
       environment: {
@@ -215,7 +215,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'updateBus',
       timeout:cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus/updateBus'),
       description: 'A Lambda Function that will process API requests and update the bus line record',
       environment: {
@@ -230,7 +230,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'filterBus',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus/filterBus'),
       description: 'A Lambda Function that will process API requests and filter the bus line record depending on the passed query',
       environment: {
@@ -246,7 +246,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'createBusUnit',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_unit/createBusUnit'),
       description: 'A Lambda Function that will process API requests and create a new bus line unit record',
       environment: {
@@ -261,7 +261,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'getBusUnit',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_unit/getBusUnit'),
       description: 'A Lambda Function that will process API requests and fetch the bus line unit record',
       environment: {
@@ -276,7 +276,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'updateBusUnit',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_unit/updateBusUnit'),
       description: 'A Lambda Function that will process API requests and update the bus line unit record',
       environment: {
@@ -291,7 +291,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'filterBusUnit',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_unit/filterBusUnit'),
       description: 'A Lambda Function that will process API requests and filter the bus unit record depending on the passed query',
       environment: {
@@ -307,7 +307,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'createBusRoute',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_route/createBusRoute'),
       description: 'A Lambda Function that will process API requests and create a new bus route record',
       environment: {
@@ -322,7 +322,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'getBusRoute',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_route/getBusRoute'),
       description: 'A Lambda Function that will process API requests and fetch the bus unit route record',
       environment: {
@@ -337,7 +337,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'filterBusRoute',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_route/filterBusRoute'),
       description: 'A Lambda Function that will process API requests and filter the bus unit route record depending on the passed query',
       environment: {
@@ -352,7 +352,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'updateBusRoute',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bus_route/updateBusRoute'),
       description: 'A Lambda Function that will process API requests and update the bus route record',
       environment: {
@@ -392,7 +392,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'createBooking',
       timeout: cdk.Duration.seconds(90),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/createBooking'),
       description: 'A Lambda Function that will process API requests and sends new booking record to the SQS Queue',
       environment: {
@@ -407,7 +407,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'processBooking',
       timeout: cdk.Duration.seconds(90),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/processBooking'),
       description: 'A Lambda Function that will process SQS events and process booking record',
       environment: {
@@ -428,7 +428,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'getBooking',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/getBooking'),
       description: 'A Lambda Function that will process API requests and fetch the booking record(s)',
       environment: {
@@ -443,7 +443,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'getCancelledBooking',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/getCancelledBooking'),
       description: 'A Lambda Function that will process API reqeusts and fetch the cancelled booking record(s)',
       environment: {
@@ -468,7 +468,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'updateBookingStatus',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/updateBookingStatus'),
       environment: {
         "EVENT_BUS": eventbus.eventBusName,
@@ -484,7 +484,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'confirmedBooking',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/confirmedBooking'),
       environment: {
         "USERS_TABLE": UsersTable.tableName,
@@ -522,7 +522,7 @@ export class BusTicketingStack extends cdk.Stack
       handler: 'bootstrap',
       functionName: 'cancelledBooking',
       timeout: cdk.Duration.seconds(60),
-      runtime: lambda.Runtime.PROVIDED_AL2,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       code: lambda.Code.fromAsset('cmd/bookings/cancelledBooking'),
       environment: {
         "USERS_TABLE": UsersTable.tableName,
@@ -561,7 +561,7 @@ export class BusTicketingStack extends cdk.Stack
       memorySize: 1024,
       handler: 'getCancelledBooking',
       functionName: 'getCancelledBooking',
-      runtime: lambda.Runtime.GO_1_X,
+      runtime: lambda.Runtime.PROVIDED_AL2023,
       timeout: cdk.Duration.seconds(60),
       code: lambda.Code.fromAsset('cmd/bookings/getCancelledBooking'),
       description: 'A Lambda Function that will process API reqeusts and fetch the cancelled booking record(s)',
